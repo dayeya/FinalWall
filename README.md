@@ -1,3 +1,3 @@
 # Picky
 
-Picky is a open source web application firewall.
+Picky is an open-source web application firewall project.
