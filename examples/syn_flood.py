@@ -8,7 +8,7 @@ from scapy.all import conf
 from scapy.layers.inet import IP, TCP
 
 LOG = '[+]'
-ERROR = '[*]'
+ERROR = '[!]'
 SYN_FLAG = 0x02
 
 class SynFlood:
