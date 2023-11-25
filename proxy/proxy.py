@@ -1,4 +1,4 @@
-import pydivert
+from threading import Thread
 from typing import List, Dict, Tuple, Any, Union
 
 class Proxy:
@@ -11,11 +11,8 @@ class Proxy:
             addr (tuple[str, int], optional): Location. Defaults to ('localhost', 60000).
         """
         self.__addr = addr
-        self.__packet_handler = pydivert.WinDivert()
     
     def boot_proxy(self) -> None:
         """
         Boots proxy, listening to traffic.
-        """
-        with self.__packet_handler as w:
-            ...
+        """ 
