@@ -15,4 +15,4 @@ class Proxy:
     def boot_proxy(self) -> None:
         """
         Boots proxy, listening to traffic.
-        """ 
+        """
