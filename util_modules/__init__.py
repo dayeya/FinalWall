@@ -1,4 +1,8 @@
-""" from .time import get_unix_time
-from .network_client import Client
-from .network import from_bin, from_hex, create_thread, send, recv, send_recv
-from .network import UNIVERSAL_IP, UNIVERSAL_BUFFER, UNIVERSAL_LISTEN_BOUND """
+"""
+This module provides simple functions related to number of topics.\n
+The modules contains the following:
+- Networking functions: send, recv, send_recv, create_thread, etc.
+- Type conversion, serialization and deserialization: encode, decode, from_bin, from_hex, etc.
+- Client represntation: Client class, etc.
+- Time related functions: get_unix_time, date_formatted_data, etc.
+"""
