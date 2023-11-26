@@ -10,9 +10,7 @@ UNIX_TIME_FORMAT = "%d/%m/%Y - %H:%M"
 def get_unix_time() -> str:
     """
     Calculates UTC time based on Jerusalem timezone.
-    
-    Returns:
-        str: Formatted current time.
+    :returns: formatted current time.
     """
     uni_time = datetime.now(pytz.timezone("Asia/Jerusalem"))
     return uni_time.strftime(UNIX_TIME_FORMAT)
@@ -20,11 +18,7 @@ def get_unix_time() -> str:
 def date_formatted_data(data: str) -> str:
     """
     Crafts a formatted string with a unix time.
-
-    Args:
-        data - str: data to log.
-
-    Returns:
-        str: A new formatted string.
+    :params: data to log.
+    :returns: a new formatted string.
     """
     return f'{get_unix_time()}, {data}'

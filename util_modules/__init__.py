@@ -1,4 +1,5 @@
 """
+Author: Daniel Sapojnikov, 2023.
 This module provides simple functions related to number of topics.\n
 The modules contains the following:
 - Networking functions: send, recv, send_recv, create_thread, etc.

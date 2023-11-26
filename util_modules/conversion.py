@@ -7,13 +7,8 @@ from functools import partial
 def convert(n: str, base: int=10) -> int:
     """
     Converts a number into integer based on specific base.
-    
-    Args:
-        n - str: number of any base
-        base -int: base of conversion. Defaults to decimal.
-        
-    Returns:
-        int: Converted integer.
+    :params: n: number to convert, base: base of conversion.
+    :returns: converted integer.
     """
     try:
         return int(n, base=base)

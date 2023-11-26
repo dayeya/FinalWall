@@ -21,14 +21,13 @@ class Client:
     def close(self) -> None:
         """
         Closes the socket.
+        :returns: None.
         """
         self.sock.close()
     
     def __str__(self) -> str:
         """
         Crafts a str from a client.
-
-        Returns:
-            str: Simplified string.
+        :returns: Simplified string.
         """
         return f'Client(sock={self.sock}, addr={self.addr})'
