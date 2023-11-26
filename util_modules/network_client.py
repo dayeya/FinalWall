@@ -26,4 +26,4 @@ class Client:
         Returns:
             str: Simplified string.
         """
-        return f'SimpleClient(sock={self.sock}, addr={self.addr})'
+        return f'Client(sock={self.sock}, addr={self.addr})'
