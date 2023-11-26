@@ -3,13 +3,14 @@ from socket import socket
 from dataclasses import dataclass
 
 Address = Tuple[str, int]
+Endpoint = Tuple[socket, Address]
 
 @dataclass(slots=True)
 class Client:
     sock: socket
     addr: tuple
 
-    def __init__(self, endpoint: Tuple[socket, Address]) -> None:
+    def __init__(self, endpoint: Endpoint) -> None:
         super().__init__(**endpoint)
     
     def close(self) -> None:
