@@ -9,9 +9,6 @@ Endpoint = Tuple[socket, Address]
 class Client:
     sock: socket
     addr: tuple
-
-    def __init__(self, endpoint: Endpoint) -> None:
-        super().__init__(*endpoint)
     
     def close(self) -> None:
         """
