@@ -33,7 +33,7 @@ class Proxy:
         Returns:
             Client: Client object of the accepeted end-point.
         """
-        return Client(self.__main_sock.accept())
+        return Client(*self.__main_sock.accept())
     
     def __boot_proxy(self) -> None:
         while True:
