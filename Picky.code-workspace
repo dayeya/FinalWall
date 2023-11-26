@@ -4,5 +4,11 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"python.defaultInterpreterPath": "python",
+		"python.analysis.autoSearchPaths": true,
+		"python.analysis.extraPaths": [
+			"./Picky/util_modules",
+		]
+	}
 }
