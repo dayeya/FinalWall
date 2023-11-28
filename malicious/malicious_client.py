@@ -11,7 +11,7 @@ def sys_append_modules():
     sys.path.append(parent_dir)
 
 sys_append_modules()
-from util_modules.network import send_recv
+from util_modules.network import safe_send_recv
 
 def connect(sock: socket, dst) -> None:
     sock.connect(dst)
@@ -22,7 +22,7 @@ def main() -> None:
     connect(sock, dst)
     while True:
         data = str(input('Enter something: '))
-        print(f'[+] Got: {send_recv(sock, data)}')
+        print(f'[+] Got: {safe_send_recv(sock, data)}')
  
 if __name__ == '__main__':
     main()

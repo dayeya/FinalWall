@@ -14,7 +14,7 @@ def sys_append_modules():
 
 sys_append_modules()
 from util_modules.network_client import Client
-from util_modules.network import create_new_thread, send, recv
+from util_modules.network import create_new_thread, safe_send, safe_recv
 from util_modules.network import all_interfaces, listen_bound
 
 Address = Tuple[str, int]
@@ -29,6 +29,14 @@ class Proxy:
         self.__ip, self.__port = addr
         self.__main_sock = socket(AF_INET, SOCK_STREAM)
         self.__configure_socket()
+
+    @property
+    def main_sock(self) -> socket:
+        """
+        Getter for the main socket.
+        :returns: socet object.
+        """
+        return self.__main_sock
         
     def __configure_socket(self) -> None:
         """
@@ -45,7 +53,7 @@ class Proxy:
         Returns:
             Client: Client object of the accepeted end-point.
         """
-        return Client(self.__main_sock.accept())
+        return Client(*self.__main_sock.accept())
     
     def __boot_proxy(self) -> None:
         """
@@ -58,14 +66,15 @@ class Proxy:
             print(f'[+] Logged a new client, {client}')
             
             # Create thread and start it.
-            thread: Thread = create_new_thread(self.__handle_client, args=client)
+            thread: Thread = create_new_thread(self.__handle_client, client)
             thread.start()
             
-    def __handle_client(client: Client) -> None:
+    def __handle_client(self, client: Client) -> None:
         while True:
-            data = recv(client.sock)
+            data = safe_recv(client.sock)
             if not data: break
-            send(f'ECHO: {data}')
+            print(f'[+] Data recieved: {data}')
+            safe_send(client.sock, f'ECHO: {data}')
             
         # End communication with client.
         client.close()

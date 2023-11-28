@@ -31,7 +31,7 @@ def __safe_socket_operation(func: Callable, sock: socket, *args: tuple) -> Opera
     except Exception as e:
         print(f"Error while: {func.__name__} on socket: {sock.getsockname()}, {e}")
 
-def recv(sock: socket) -> str:
+def safe_recv(sock: socket) -> str:
     """
     Waits for data from sock.
     :params: sock - socket.
@@ -42,7 +42,7 @@ def recv(sock: socket) -> str:
     
     return decode(__safe_socket_operation(nest_recv, sock, buffer_size))
 
-def send(sock: socket, payload: str) -> None:
+def safe_send(sock: socket, payload: str) -> None:
     """
     Sends a payload from sock.
     :params: sock - socket, payload - str.
@@ -53,17 +53,17 @@ def send(sock: socket, payload: str) -> None:
     
     __safe_socket_operation(nest_send, sock, payload)
 
-def send_recv(sock: socket, payload: str) -> str:
+def safe_send_recv(sock: socket, payload: str) -> str:
     """
     Sends a payload from sock and waits for an answer, using a safe operation.
     :params: sock - socket, payload - str.
     :return: Decoded answer.
     """
-    send(sock, payload)
-    data = recv(sock)
+    safe_send(sock, payload)
+    data = safe_recv(sock)
     return data
     
-def create_new_thread(func: Callable[[Client], None], *args) -> Thread:
+def create_new_thread(func: Callable, *args) -> Thread:
     """
     Creates a local thread.
     :params: func - Callable[[Client], None], args: list.
