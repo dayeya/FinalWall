@@ -7,7 +7,7 @@ from typing import List, Dict, Tuple, Any, Union
 def sys_append_modules() -> None:
     """
     Appends all importent modules into sys_path.
-    :returns: None. 
+    :returns: None.  
     """
     parent = '../...'
     module = os.path.abspath(os.path.join(os.path.dirname(__file__), parent))
@@ -50,9 +50,7 @@ class Proxy:
     def __accept_client(self) -> Client:
         """
         Waits for a client, return a new Client.
-
-        Returns:
-            Client: Client object of the accepeted end-point.
+        :returns: A client object.
         """
         return Client(*self.__main_sock.accept())
     

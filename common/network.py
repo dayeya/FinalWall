@@ -35,10 +35,10 @@ def safe_recv(sock: socket) -> str:
     :params: sock - socket.
     :return: decoded data.
     """
-    def nest_recv(sock: socket, buffer: int) -> bytes:
+    def __recv(sock: socket, buffer: int) -> bytes:
         return sock.recv(buffer)
     
-    return decode(__safe_socket_operation(nest_recv, sock, buffer_size))
+    return decode(__safe_socket_operation(__recv, sock, buffer_size))
 
 def safe_send(sock: socket, payload: str) -> None:
     """
@@ -46,10 +46,10 @@ def safe_send(sock: socket, payload: str) -> None:
     :params: sock - socket, payload - str.
     :return: None.
     """
-    def nest_send(sock: socket, payload: str) -> bytes:
+    def __send(sock: socket, payload: str) -> bytes:
         return sock.send(encode(payload))
     
-    __safe_socket_operation(nest_send, sock, payload)
+    __safe_socket_operation(__send, sock, payload)
 
 def safe_send_recv(sock: socket, payload: str) -> str:
     """
