@@ -9,14 +9,15 @@ import sys
 from socket import *
 from typing import Callable, Union
 from threading import Thread
-from network_client import Client
-from conversion import from_bin, from_hex, decode, encode
+from .network_client import Client
+from .conversion import from_bin, from_hex, decode, encode
 
 # Universal networking constants.
 all_interfaces = "0.0.0.0"
 buffer_size = 4096
 listen_bound = 5
 
+# Custom types.
 Operation_Result = Union[bytes, None]
 
 def __safe_socket_operation(func: Callable, sock: socket, *args: tuple) -> Operation_Result:
@@ -48,7 +49,7 @@ def send(sock: socket, payload: str) -> None:
     :return: None.
     """
     def nest_send(sock: socket, payload: str) -> bytes:
-        return sock.send(payload)
+        return sock.send(encode(payload))
     
     __safe_socket_operation(nest_send, sock, payload)
 
