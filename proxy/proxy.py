@@ -4,18 +4,19 @@ from socket import *
 from threading import Thread
 from typing import List, Dict, Tuple, Any, Union
 
-def sys_append_modules():
+def sys_append_modules() -> None:
     """
     Appends all importent modules into sys_path.
     :returns: None. 
     """
-    parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../...'))
-    sys.path.append(parent_dir)
+    parent = '../...'
+    module = os.path.abspath(os.path.join(os.path.dirname(__file__), parent))
+    sys.path.append(module)
 
 sys_append_modules()
-from util_modules.network_client import Client
-from util_modules.network import create_new_thread, safe_send, safe_recv
-from util_modules.network import all_interfaces, listen_bound
+from common.network_client import Client
+from common.network import create_new_thread, safe_send, safe_recv
+from common.network import all_interfaces, listen_bound
 
 Address = Tuple[str, int]
 

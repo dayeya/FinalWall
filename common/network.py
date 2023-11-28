@@ -1,8 +1,6 @@
 """
 Author: Daniel Sapojnikov, 2023.
 Network module contains useful function related to networking.
-
-Short function should be documented like this.
 """
 
 import sys

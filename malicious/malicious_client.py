@@ -2,16 +2,17 @@ import os
 import sys
 from socket import *
 
-def sys_append_modules():
+def sys_append_modules() -> None:
     """
     Appends all importent modules into sys_path.
     :returns: None. 
     """
-    parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../...'))
-    sys.path.append(parent_dir)
+    parent = '../...'
+    module = os.path.abspath(os.path.join(os.path.dirname(__file__), parent))
+    sys.path.append(module)
 
 sys_append_modules()
-from util_modules.network import safe_send_recv
+from common.network import safe_send_recv
 
 def connect(sock: socket, dst) -> None:
     sock.connect(dst)
