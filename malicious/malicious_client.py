@@ -1,5 +1,5 @@
 from socket import *
-from util_modules import send_recv
+from util_modules.network import send_recv
 
 def connect(sock: socket, dst) -> None:
     sock.connect(dst)

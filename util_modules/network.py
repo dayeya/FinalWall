@@ -49,7 +49,7 @@ def send_recv(sock: socket, payload: str) -> str:
     data = recv(sock)
     return data
     
-def create_thread(func: Callable[[Client], None], *args) -> Thread:
+def create_new_thread(func: Callable[[Client], None], *args) -> Thread:
     """
     Creates a local thread.
     :params: func - Callable[[Client], None], args: list.

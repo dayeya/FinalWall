@@ -3,7 +3,7 @@ from threading import Thread
 from typing import List, Dict, Tuple, Any, Union
 
 from util_modules.network_client import Client
-from util_modules.network import create_thread, send, recv
+from util_modules.network import create_new_thread, send, recv
 from util_modules.network import all_interfaces, listen_bound
 
 Address = Tuple[str, int]
@@ -17,14 +17,16 @@ class Proxy:
             addr (tuple[str, int], optional): Location. Defaults to ('localhost', 60000).
         """
         self.__ip, self.__port = addr
+        self.__configure_socket()
+        
+    def __configure_socket(self) -> None:
+        """
+        Initializes the connection to all interfaces. 
+        :returns: None.
+        """
         self.__main_sock = socket(AF_INET, SOCK_STREAM)
-        
-        # Bind and start listening.
-        self.__main_sock.bind(addr)
+        self.__main_sock.bind((self.__ip, self.__port))
         self.__main_sock.listen(listen_bound)
-        
-        # Start proxy.
-        self.__boot_proxy()
         
     def __accept_client(self) -> Client:
         """
@@ -33,7 +35,7 @@ class Proxy:
         Returns:
             Client: Client object of the accepeted end-point.
         """
-        return Client(*self.__main_sock.accept())
+        return Client(self.__main_sock.accept())
     
     def __boot_proxy(self) -> None:
         while True:
@@ -41,11 +43,8 @@ class Proxy:
             print(f'[+] Logged a new client! {client}')
             
             # Create thread and start it.
-            thread: Thread = create_thread(self.__handle_client, args=client)
+            thread: Thread = create_new_thread(self.__handle_client, args=client)
             thread.start()
-            
-    def start(self) -> None:
-        self.__boot_proxy()
             
     def __handle_client(client: Client) -> None:
         while True:
@@ -55,6 +54,10 @@ class Proxy:
             
         # End communication with client.
         client.close()
+          
+    def start(self) -> None:
+        self.__boot_proxy()
+            
         
 if __name__ == '__main__':
     waf = Proxy()
