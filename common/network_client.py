@@ -14,6 +14,24 @@ Endpoint = Tuple[socket, Address]
 class Client:
     sock: socket
     addr: tuple
+    
+    __slots__ = ('sock', 'addr')
+
+    @property
+    def port(self) -> str:
+        """
+        Getter for the port address.
+        :returns: port of the client.
+        """
+        return self.addr[1]
+
+    @property
+    def ip(self) -> str:
+        """
+        Getter for the ip address.
+        :returns: ip of the client.
+        """
+        return self.addr[0]
 
     def close(self) -> None:
         """
@@ -22,7 +40,7 @@ class Client:
         """
         self.sock.close()
     
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         """
         Crafts a str from a client.
         :returns: Simplified string.

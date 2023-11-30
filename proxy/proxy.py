@@ -2,7 +2,7 @@ import os
 import sys
 from socket import *
 from threading import Thread
-from typing import List, Dict, Tuple, Any, Union
+from typing import Tuple
 
 def sys_append_modules() -> None:
     """
@@ -15,8 +15,8 @@ def sys_append_modules() -> None:
 
 sys_append_modules()
 from common.network_client import Client
-from common.network import create_new_thread, safe_send, safe_recv
 from common.network import all_interfaces, listen_bound
+from common.network import create_new_thread, safe_send, safe_recv
 
 Address = Tuple[str, int]
 
@@ -49,7 +49,7 @@ class Proxy:
         
     def __accept_client(self) -> Client:
         """
-        Waits for a client, and convert it into a Client object.
+        Accepts a client.
         :returns: A client object.
         """
         return Client(*self.__main_sock.accept())
@@ -70,7 +70,7 @@ class Proxy:
             
     def __handle_client(self, client: Client) -> None:
         while True:
-            data = safe_recv(client.sock)
+            data = safe_recv(client.sock, buffer_size=4096)
             if not data: break
             print(f'[+] Data recieved: {data}')
             safe_send(client.sock, f'ECHO: {data}')

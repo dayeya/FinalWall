@@ -7,21 +7,19 @@ import sys
 from socket import *
 from typing import Callable, Union
 from threading import Thread
-from .network_client import Client
-from .conversion import from_bin, from_hex, decode, encode
+from .conversion import decode, encode
 
 # Universal networking constants.
 all_interfaces = "0.0.0.0"
-buffer_size = 4096
 listen_bound = 5
 
 # Custom types.
-Operation_Result = Union[bytes, None]
+FunctionResult = Union[bytes, None]
 
-def __safe_socket_operation(func: Callable, sock: socket, *args: tuple) -> Operation_Result:
+def __safe_socket_operation(func: Callable, sock: socket, *args: tuple) -> FunctionResult:
     """
     Wrapper function to perform any socket operation.
-    :params: func - Callable, sock - socket, args - tuple.
+    :params: func, sock, args.
     :return: Result of the operation.
     """
     try:
@@ -29,10 +27,10 @@ def __safe_socket_operation(func: Callable, sock: socket, *args: tuple) -> Opera
     except Exception as e:
         print(f"Error while: {func.__name__} on socket: {sock.getsockname()}, {e}")
 
-def safe_recv(sock: socket) -> str:
+def safe_recv(sock: socket, buffer_size: int) -> str:
     """
     Waits for data from sock.
-    :params: sock - socket.
+    :params: sock, buffer_size.
     :return: decoded data.
     """
     def __recv(sock: socket, buffer: int) -> bytes:
@@ -43,7 +41,7 @@ def safe_recv(sock: socket) -> str:
 def safe_send(sock: socket, payload: str) -> None:
     """
     Sends a payload from sock.
-    :params: sock - socket, payload - str.
+    :params: sock, payload.
     :return: None.
     """
     def __send(sock: socket, payload: str) -> bytes:
@@ -54,17 +52,17 @@ def safe_send(sock: socket, payload: str) -> None:
 def safe_send_recv(sock: socket, payload: str) -> str:
     """
     Sends a payload from sock and waits for an answer, using a safe operation.
-    :params: sock - socket, payload - str.
+    :params: sock, payload.
     :return: Decoded answer.
     """
     safe_send(sock, payload)
     data = safe_recv(sock)
     return data
     
-def create_new_thread(func: Callable, *args) -> Thread:
+def create_new_thread(func: Callable, *args: tuple) -> Thread:
     """
     Creates a local thread.
-    :params: func - Callable[[Client], None], args: list.
+    :params: func, args.
     :returns: Thread.
     """
     return Thread(target=func, args=args)
