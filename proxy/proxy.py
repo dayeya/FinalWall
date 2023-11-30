@@ -49,7 +49,7 @@ class Proxy:
         
     def __accept_client(self) -> Client:
         """
-        Waits for a client, return a new Client.
+        Waits for a client, and convert it into a Client object.
         :returns: A client object.
         """
         return Client(*self.__main_sock.accept())
