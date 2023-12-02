@@ -3,13 +3,13 @@ Author: Daniel Sapojnikov, 2023.
 Network module contains useful function related to networking.
 """
 
-import sys
-from socket import *
+from socket import socket
 from typing import Callable, Union
 from threading import Thread
-from .conversion import decode, encode
+from conversion import decode, encode
 
 # Universal networking constants.
+loop_back = '127.0.0.1'
 all_interfaces = "0.0.0.0"
 listen_bound = 5
 

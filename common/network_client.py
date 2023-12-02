@@ -19,18 +19,10 @@ class Client:
 
     @property
     def port(self) -> str:
-        """
-        Getter for the port address.
-        :returns: port of the client.
-        """
         return self.addr[1]
 
     @property
     def ip(self) -> str:
-        """
-        Getter for the ip address.
-        :returns: ip of the client.
-        """
         return self.addr[0]
 
     def close(self) -> None:
