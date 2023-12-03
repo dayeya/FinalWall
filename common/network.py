@@ -14,9 +14,9 @@ loop_back = '127.0.0.1'
 Address = Tuple[str, int]
 
 # Custom types.
-SendResult = None
-RecvResult = Tuple[bytes, int]
-FunctionResult = Union[SendResult, RecvResult]
+SafeRecv = str
+SafeSend = int
+FunctionResult = Union[SafeRecv, SafeSend]
 
 def __safe_socket_operation(func: Callable, sock: socket, *args: tuple) -> FunctionResult:
     """
@@ -35,7 +35,8 @@ def safe_recv(sock: socket, buffer_size: int) -> str:
     :params: sock, buffer_size.
     :return: decoded data.
     """
-    def __recv(sock: socket, buffer: int) -> FunctionResult:
+    __recv_result = Tuple[bytes, int]
+    def __recv(sock: socket, buffer: int) -> __recv_result:
         """
         Basic recv function.
         """
@@ -60,10 +61,11 @@ def safe_send(sock: socket, payload: str) -> None:
     :params: sock, payload.
     :return: None.
     """
-    def __send(sock: socket, payload: str) -> int:
+    __send_result = int
+    def __send(sock: socket, payload: str) -> __send_result:
         return sock.send(encode(payload))
     
-    __safe_socket_operation(__send, sock, payload)
+    return __safe_socket_operation(__send, sock, payload)
 
 def safe_send_recv(sock: socket, payload: str) -> str:
     """
