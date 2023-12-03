@@ -4,17 +4,19 @@ Network module contains useful function related to networking.
 """
 
 from socket import socket
-from typing import Callable, Union
+from typing import Tuple, Callable, Union
 from threading import Thread
-from conversion import decode, encode
+from .conversion import decode, encode
 
 # Universal networking constants.
+null_ip = "0.0.0.0"
 loop_back = '127.0.0.1'
-all_interfaces = "0.0.0.0"
-listen_bound = 5
+Address = Tuple[str, int]
 
 # Custom types.
-FunctionResult = Union[bytes, None]
+SendResult = None
+RecvResult = Tuple[bytes, int]
+FunctionResult = Union[SendResult, RecvResult]
 
 def __safe_socket_operation(func: Callable, sock: socket, *args: tuple) -> FunctionResult:
     """
@@ -33,8 +35,22 @@ def safe_recv(sock: socket, buffer_size: int) -> str:
     :params: sock, buffer_size.
     :return: decoded data.
     """
-    def __recv(sock: socket, buffer: int) -> bytes:
-        return sock.recv(buffer)
+    def __recv(sock: socket, buffer: int) -> FunctionResult:
+        """
+        Basic recv function.
+        """
+        data = sock.recv()
+        if not data:
+            return b"", 0
+            
+        if len(data) == buffer:
+            while True:
+                try:
+                    data += sock.recv(buffer)
+                except:
+                    break
+                
+        return data, 1
     
     return decode(__safe_socket_operation(__recv, sock, buffer_size))
 
@@ -44,7 +60,7 @@ def safe_send(sock: socket, payload: str) -> None:
     :params: sock, payload.
     :return: None.
     """
-    def __send(sock: socket, payload: str) -> bytes:
+    def __send(sock: socket, payload: str) -> int:
         return sock.send(encode(payload))
     
     __safe_socket_operation(__send, sock, payload)

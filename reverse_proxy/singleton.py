@@ -1,7 +1,11 @@
+from typing import Type
+
+Inheritor = Type[object]
+
 class Singleton(type):
     __instances = {}
     
-    def __call__(cls, *args, **kwargs):
+    def __call__(cls, *args, **kwargs) -> Inheritor:
         """
         Returns the instances if it exists, otherwise creates it.
 
