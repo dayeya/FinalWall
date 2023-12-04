@@ -3,12 +3,12 @@ Author: Daniel Sapojnikov 2023.
 Client Class used to define clients across the LAN.
 """
 
-from typing import Tuple
 from socket import socket
+from typing import Tuple, Union
 from dataclasses import dataclass
 
-Address = Tuple[str, int]
-Endpoint = Tuple[socket, Address]
+type Address = Tuple[str, int]
+type Endpoint = Tuple[socket, Address]
 
 @dataclass
 class Client:
@@ -38,3 +38,17 @@ class Client:
         :returns: Simplified string.
         """
         return f'Client(sock={self.sock}, addr={self.addr})'
+
+type NetworkObject = Union[Client, socket]
+
+def close_all(*args: Tuple[NetworkObject]) -> None:
+    """
+    Closes all network objects that have .close()
+    """
+    for obj in args:
+        classify = obj.__class__.__name__
+        try:
+            obj.close()
+            print(f'[!] A {classify} object was closed successfuly!')
+        except Exception as close_error:
+            print(f'[!] {classify}.close() was not complete. {close_error}')
