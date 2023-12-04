@@ -1,3 +1,8 @@
+"""
+Author: Daniel Sapojnikov 2023.
+Reverse proxy module of the Picky System.
+"""
+
 import os
 import sys
 from socket import socket, AF_INET, SOCK_STREAM
@@ -21,8 +26,7 @@ class BaseServer:
     def __init__(self, addr: Address, admin: Address) -> None:
         self._addr = addr
         self._admin = admin
-        
-        # setup all needed sockets.
+
         self.__create_socks()
         self.__establish_socks()
         

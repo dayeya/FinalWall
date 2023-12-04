@@ -60,7 +60,7 @@ def safe_send(sock: socket, payload: bytes) -> None:
     :return: None.
     """
     def __send(sock: socket, payload: bytes) -> __send_result:
-        sock.send(payload)
+        return sock.send(payload)
         
     __safe_socket_operation(__send, sock, payload)
 
