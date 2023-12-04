@@ -33,18 +33,17 @@ from common.network import (
     safe_recv 
 )
 
-NetworkObject = Union[Client, socket]
+type NetworkObject = Union[Client, socket]
 
 def close_all(*args: Tuple[NetworkObject]) -> None:
     """
-    NetworkObject: Client or a Socket.
-    Closes all network objects.
+    Closes all network objects that have .close()
     """
     for obj in args:
         classify = obj.__class__.__name__
         try:
-            with getattr(obj, 'close', None):           
-                print(f'[!] A {classify} object was closed successfuly!')
+            obj.close()
+            print(f'[!] A {classify} object was closed successfuly!')
         except Exception as close_error:
             print(f'[!] {classify}.close() was not complete. {close_error}')
 
