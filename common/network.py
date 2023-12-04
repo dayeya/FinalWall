@@ -39,9 +39,6 @@ def safe_recv(sock: socket, buffer_size: int) -> SafeRecv:
     :return: decoded data.
     """
     def __recv(sock: socket, buffer: int) -> __recv_result:
-        """
-        Basic recv function.
-        """
         data = sock.recv(buffer)
         if not data:
             return b"", 0
@@ -52,9 +49,8 @@ def safe_recv(sock: socket, buffer_size: int) -> SafeRecv:
                     data += sock.recv(buffer)
                 except:
                     break
-                
         return data, 1
-    
+
     return __safe_socket_operation(__recv, sock, buffer_size)
 
 def safe_send(sock: socket, payload: bytes) -> None:
@@ -64,9 +60,9 @@ def safe_send(sock: socket, payload: bytes) -> None:
     :return: None.
     """
     def __send(sock: socket, payload: bytes) -> __send_result:
-        return sock.send(payload)
-    
-    return __safe_socket_operation(__send, sock, payload)
+        sock.send(payload)
+        
+    __safe_socket_operation(__send, sock, payload)
 
 def safe_send_recv(sock: socket, payload: str) -> str:
     """
