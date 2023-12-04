@@ -16,24 +16,24 @@ from common.network import Address
 
 class BaseServer:
     """
-    Base class for a proxy server.
+    BaseServer defines the basic configuration of the Picky proxy.
     """
     def __init__(self, addr: Address, admin: Address) -> None:
-        self.__addr = addr
-        self.__admin = admin
+        self._addr = addr
+        self._admin = admin
         
         # setup all needed sockets.
         self.__create_socks()
         self.__establish_socks()
         
-        self.__main_sock.listen()
+        self._main_sock.listen()
     
     def __create_socks(self) -> None:
-        self.__main_sock  = socket(AF_INET, SOCK_STREAM)
-        self.__admin_sock = socket(AF_INET, SOCK_STREAM)
+        self._main_sock  = socket(AF_INET, SOCK_STREAM)
+        self._admin_sock = socket(AF_INET, SOCK_STREAM)
         
     def __establish_socks(self) -> None:
         """
-        Establishes all needed sockets.
+        Establishes connections or bindings for all needed sockets.
         """
-        self.__main_sock.bind(self.__addr)
+        self._main_sock.bind(self._addr)

@@ -14,9 +14,12 @@ loop_back = '127.0.0.1'
 Address = Tuple[str, int]
 
 # Custom types.
-SafeRecv = str
+SafeRecv = Tuple[bytes, int]
 SafeSend = int
 FunctionResult = Union[SafeRecv, SafeSend]
+
+__recv_result = Tuple[bytes, int]
+__send_result = int
 
 def __safe_socket_operation(func: Callable, sock: socket, *args: tuple) -> FunctionResult:
     """
@@ -29,18 +32,17 @@ def __safe_socket_operation(func: Callable, sock: socket, *args: tuple) -> Funct
     except Exception as e:
         print(f"Error while: {func.__name__} on socket: {sock.getsockname()}, {e}")
 
-def safe_recv(sock: socket, buffer_size: int) -> str:
+def safe_recv(sock: socket, buffer_size: int) -> SafeRecv:
     """
     Waits for data from sock.
     :params: sock, buffer_size.
     :return: decoded data.
     """
-    __recv_result = Tuple[bytes, int]
     def __recv(sock: socket, buffer: int) -> __recv_result:
         """
         Basic recv function.
         """
-        data = sock.recv()
+        data = sock.recv(buffer)
         if not data:
             return b"", 0
             
@@ -53,17 +55,16 @@ def safe_recv(sock: socket, buffer_size: int) -> str:
                 
         return data, 1
     
-    return decode(__safe_socket_operation(__recv, sock, buffer_size))
+    return __safe_socket_operation(__recv, sock, buffer_size)
 
-def safe_send(sock: socket, payload: str) -> None:
+def safe_send(sock: socket, payload: bytes) -> None:
     """
     Sends a payload from sock.
     :params: sock, payload.
     :return: None.
     """
-    __send_result = int
-    def __send(sock: socket, payload: str) -> __send_result:
-        return sock.send(encode(payload))
+    def __send(sock: socket, payload: bytes) -> __send_result:
+        return sock.send(payload)
     
     return __safe_socket_operation(__send, sock, payload)
 
