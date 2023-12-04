@@ -8,17 +8,17 @@ import asyncio
 import argparse
 from base import BaseServer
 from threading import Thread
-from blacklist import BlackList
 from typing import Tuple, Union, Dict
-from http_handling import recv_http
-from socket import socket, AF_INET, SOCK_STREAM 
+from socket import socket, AF_INET, SOCK_STREAM
+from components import BlackList
+from http_handling import recv_http 
 
 def sys_append_modules() -> None:
     """
     Appends all importent modules into sys_path.
     :returns: None.  
     """
-    parent = '../...'
+    parent = '.../...'
     module = os.path.abspath(os.path.join(os.path.dirname(__file__), parent))
     sys.path.append(module)
 
