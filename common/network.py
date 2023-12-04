@@ -38,8 +38,9 @@ def safe_recv(sock: socket, buffer_size: int) -> SafeRecv:
     :return: decoded data.
     """
     def __recv(sock: socket, buffer: int) -> __recv_result:
-        data = sock.recv(buffer)
-        if not data:
+        try:
+            data = sock.recv(buffer)
+        except:
             return b"", 0
             
         if len(data) == buffer:

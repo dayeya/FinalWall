@@ -26,7 +26,7 @@ class HTTPRequest(BaseHTTPRequestHandler):
         
 class HTTPServerResponse(HTTPResponse):
     """
-    Basic Wrapper to a http response for parsing and using raw bytes.
+    Basic parser to a HTTP response from raw bytes.
     """
     def __init__(self, packet: bytes) -> None:
         """

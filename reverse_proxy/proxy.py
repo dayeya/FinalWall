@@ -10,7 +10,7 @@ from base import BaseServer
 from threading import Thread
 from blacklist import BlackList
 from typing import Tuple, Union, Dict
-from http_handling import get_content_length
+from http_handling import recv_http
 from socket import socket, AF_INET, SOCK_STREAM 
 
 def sys_append_modules() -> None:
@@ -61,35 +61,24 @@ class Proxy(BaseServer):
         Handles a single request in an asynchronous manner.
         """
         print(f'[+] Logged a new client: {client.addr}')
-        request, result = safe_recv(client.sock, buffer_size=8192)
         
-        if not result: 
-            client.close()
-            return
-
         webserver_sock = socket(AF_INET, SOCK_STREAM)
         webserver_sock.connect(('127.0.0.1', 80))
         
-        safe_send(webserver_sock, request)
-        response, result = safe_recv(webserver_sock, buffer_size=8192)
-        if not result:
-            close_all(webserver_sock, client)
-            return
-        
-        data, fragments_len = response, len(response)
-        content_length = get_content_length(response, default=-1)
-        
-        while fragments_len < content_length:
-            response, result = safe_recv(webserver_sock, buffer_size=8192)
+        while True:
+            request, result = safe_recv(client.sock, buffer_size=8192)
+            if not result: 
+                break
             
+            safe_send(webserver_sock, request)
+
+            data, result = recv_http(webserver_sock)
             if not result:
-                close_all(webserver_sock, client)
-                return
+                break
             
-            data += response
-            fragments_len = len(data)
-        
-        safe_send(client.sock, data)
+            print(data)
+            safe_send(client.sock, data)
+            
         close_all(webserver_sock, client)
 
 if __name__ == '__main__':
