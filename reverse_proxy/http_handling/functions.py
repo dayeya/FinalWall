@@ -60,7 +60,7 @@ def recv_http(sock: socket) -> SafeRecv:
     fragments_len = len(response)
     content_length = get_content_length(response, default=-1)
     
-    while fragments_len < content_length:
+    while fragments_len <= content_length:
         response, result = safe_recv(sock, buffer_size=8192)
         
         if not result:

@@ -33,16 +33,23 @@ from common.network import (
     safe_recv
 )
 
+# Add admin addr.
+ADMIN = ()
+
 class Proxy(BaseServer):
     """
     Proxy class for Picky.
     """
-    def __init__(self, addr: Address=(loop_back, 8080), admin: Address=(loop_back, 50000)) -> None:
+    def __init__(self, 
+            addr: Address, 
+            target: Address
+        ) -> None:
         """
         Basic __init__ function.
         """
+        self.__target = target
         self.__blacklist = BlackList()
-        super().__init__(addr, admin)
+        super().__init__(addr, ADMIN)
         
     def __accept_client(self) -> Client:
         return Client(*self._main_sock.accept())
@@ -54,33 +61,30 @@ class Proxy(BaseServer):
         """
         print(f'[+] Picky started, address: {self._addr}')
         while True:
-            self.__handle_client(self.__accept_client())
+            client = self.__accept_client()
+            print(f'[+] Logged a new client: {client.addr}')
+            self.__handle_client(client)
     
     def __handle_client(self, client: Client) -> None:
-        """
-        Handles a single request in an asynchronous manner.
-        """
-        print(f'[+] Logged a new client: {client.addr}')
         
         webserver_sock = socket(AF_INET, SOCK_STREAM)
-        webserver_sock.connect(('127.0.0.1', 80))
+        webserver_sock.connect(self.__target)
         
         while True:
             request, result = safe_recv(client.sock, buffer_size=8192)
             if not result: 
                 break
             
+            print(request)
             safe_send(webserver_sock, request)
 
             data, result = recv_http(webserver_sock)
             if not result:
                 break
-            
-            print(data)
             safe_send(client.sock, data)
             
         close_all(webserver_sock, client)
 
 if __name__ == '__main__':
-    waf = Proxy()
+    waf = Proxy(addr=('127.0.0.1', 8080), target=('127.0.0.1', 80))
     asyncio.run(waf.start())
