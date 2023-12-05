@@ -14,11 +14,11 @@ loop_back = '127.0.0.1'
 Address = Tuple[str, int]
 
 # Custom types.
-type __recv_result = Tuple[bytes, int]
-type __send_result = int
-type SafeRecv = Tuple[bytes, int]
-type SafeSend = int
-type FunctionResult = Union[SafeRecv, SafeSend]
+__recv_result = Tuple[bytes, int]
+__send_result = int
+SafeRecv = Tuple[bytes, int]
+SafeSend = int
+FunctionResult = Union[SafeRecv, SafeSend]
 
 def __safe_socket_operation(func: Callable, sock: socket, *args: tuple) -> FunctionResult:
     """
