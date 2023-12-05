@@ -74,8 +74,7 @@ class Proxy(BaseServer):
             request, result = safe_recv(client.sock, buffer_size=8192)
             if not result: 
                 break
-            
-            print(request)
+
             safe_send(webserver_sock, request)
 
             data, result = recv_http(webserver_sock)

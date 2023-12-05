@@ -1,3 +1,8 @@
+"""
+Author: Daniel Sapojnikov 2023.
+General HTTP objects to use.
+"""
+
 from io import BytesIO
 from http.client import HTTPResponse
 from http.server import BaseHTTPRequestHandler
@@ -24,7 +29,7 @@ class HTTPRequest(BaseHTTPRequestHandler):
     Basic Wrapper to a http request for parsing and using raw bytes.
     """
         
-class HTTPServerResponse(HTTPResponse):
+class HTTPSessionResponse(HTTPResponse):
     """
     Basic parser to a HTTP response from raw bytes.
     """
