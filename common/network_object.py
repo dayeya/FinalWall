@@ -9,12 +9,10 @@ from dataclasses import dataclass
 
 type Address = Tuple[str, int]
 
-@dataclass
+@dataclass(slots=True)
 class Client:
     sock: socket
     addr: Address
-    
-    __slots__ = ('sock', 'addr')
 
     @property
     def port(self) -> str:
@@ -37,8 +35,28 @@ class Client:
         :returns: Simplified string.
         """
         return f'Client(sock={self.sock}, addr={self.addr})'
+    
+@dataclass(slots=True)
+class ServerConnection:
+    sock: socket
+    addr: Address
 
-type NetworkObject = Union[Client, socket]
+    @property
+    def port(self) -> str:
+        return self.addr[1]
+
+    @property
+    def ip(self) -> str:
+        return self.addr[0]
+
+    def close(self) -> None:
+        """
+        Closes the socket.
+        :returns: None.
+        """
+        self.sock.close()
+
+type NetworkObject = Union[ServerConnection, Client, socket]
 
 def close_all(*args: Tuple[NetworkObject]) -> None:
     """

@@ -11,7 +11,7 @@ from threading import Thread
 from typing import Tuple, Union, Dict
 from socket import socket, AF_INET, SOCK_STREAM
 from components import BlackList
-from http_handling import recv_http 
+from http_handling import HTTPSession
 
 def sys_append_modules() -> None:
     """
@@ -23,7 +23,7 @@ def sys_append_modules() -> None:
     sys.path.append(module)
 
 sys_append_modules()
-from common.network_object import Client, close_all
+from common.network_object import ServerConnection, Client, close_all
 from common.network import (
     null_ip, 
     loop_back,
@@ -40,15 +40,12 @@ class Proxy(BaseServer):
     """
     Proxy class for Picky.
     """
-    def __init__(self, 
-            addr: Address, 
-            target: Address
-        ) -> None:
-        """
-        Basic __init__ function.
-        """
+    def __init__(self, addr: Address, target: Address) -> None:
         self.__target = target
+        self.__sessions: Dict[Client, HTTPSession] = {}
         self.__blacklist = BlackList()
+        
+        # Initialize BaseServer.
         super().__init__(addr, ADMIN)
         
     def __accept_client(self) -> Client:
@@ -65,25 +62,39 @@ class Proxy(BaseServer):
             print(f'[+] Logged a new client: {client.addr}')
             self.__handle_client(client)
     
+    def __init_session(self, client: Client, server: ServerConnection) -> None:
+        """
+        Adds a HTTP session to sessions dict.
+        """
+        self.__sessions.update(
+            {client: HTTPSession(client, server)}
+        )
+    
     def __handle_client(self, client: Client) -> None:
         
         webserver_sock = socket(AF_INET, SOCK_STREAM)
         webserver_sock.connect(self.__target)
         
+        web_server = ServerConnection(webserver_sock, self.__target)
+        self.__init_session(client, web_server)
+        
+        current_session = self.__sessions[client]
+        target_sock = current_session.get_target_sock()
+        client_sock = current_session.get_client_sock()
+        
         while True:
-            request, result = safe_recv(client.sock, buffer_size=8192)
-            if not result: 
-                break
-
-            safe_send(webserver_sock, request)
-
-            data, result = recv_http(webserver_sock)
-            if not result:
-                break
-            safe_send(client.sock, data)
             
-        close_all(webserver_sock, client)
+            request, _ = current_session.recv_full_http(from_target=False)
+            safe_send(target_sock, request)
+            
+            response, _ = current_session.recv_full_http(from_target=True)
+            safe_send(client_sock, response)
+            
+            if not current_session.active():
+                break
+        
+        self.__sessions[client].close_session()
 
 if __name__ == '__main__':
-    waf = Proxy(addr=('127.0.0.1', 8080), target=('127.0.0.1', 80))
+    waf = Proxy(addr=('127.0.0.1', 8080), target=('127.0.0.1', 50000))
     asyncio.run(waf.start())
