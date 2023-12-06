@@ -8,12 +8,11 @@ from typing import Tuple, Union
 from dataclasses import dataclass
 
 type Address = Tuple[str, int]
-type Endpoint = Tuple[socket, Address]
 
 @dataclass
 class Client:
     sock: socket
-    addr: tuple
+    addr: Address
     
     __slots__ = ('sock', 'addr')
 

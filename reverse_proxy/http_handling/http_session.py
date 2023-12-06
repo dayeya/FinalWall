@@ -28,11 +28,14 @@ from common.network_object import Client, Address
 
 @dataclass(slots=True)
 class HTTPSession:
-    running: bool = field(default_factory=True)
     client_side: Client
     target_side: Address
+    running: bool = field(default_factory=True)
     
     def close_session(self) -> None:
+        """
+        Closes the session.
+        """
         pass
     
     def is_on(self) -> bool:
@@ -47,7 +50,7 @@ class HTTPSession:
         """
         fragment, result = safe_recv(self.client_side.sock, buffer_size=8192)
         if not result:
-            self.cclose_session()
+            self.close_session()
         return fragment
     
     def full_http_packet(self) -> SafeRecv:
