@@ -40,14 +40,11 @@ class HTTPSessionResponse(HTTPResponse):
     Basic parser to a HTTP response from raw bytes.
     """
     def __init__(self, packet: bytes) -> None:
-        self._headers, self._content = packet.split(b'\r\n\r\n', 1)
-        self.__bytes_file = BytesSocket(self._headers)
+        self._chunk = packet.split(b'\r\n\r\n', 1)[0]
+        self.__bytes_file = BytesSocket(self._chunk)
         
         super().__init__(self.__bytes_file)
         self.begin()
-        
-    def get_headers(self) -> bytes:
-        return self._headers
     
-    def get_content(self) -> bytes:
-        return self._content
+    def get_packet(self) -> bytes:
+        return self._chunk

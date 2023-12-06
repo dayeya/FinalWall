@@ -14,6 +14,9 @@ def convert(n: str, base: int=10) -> int:
         return int(n, base=base)
     except ValueError:
         raise ValueError(f"Invalid input for conversion of base {base}")
+    
+def to_bytes(b: bytearray) -> bytes:
+    return bytes(b)
 
 # Base conversion partial functions.
 from_bin = partial(convert, base=2)

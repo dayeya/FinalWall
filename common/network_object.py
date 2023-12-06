@@ -21,25 +21,22 @@ class Connection:
     def close(self) -> None:
         self.sock.close()
         
-    def __repr__(self) -> str:
-        return f'Connection(sock={self.sock}, addr={self.addr})'
+    def __hash__(self) -> int:
+        return hash((self.sock, self.host_addr))
 
-@dataclass(slots=True)
 class ClientConnection(Connection):
-    sock: socket
-    addr: Address
-    
+    def __init__(self, sock: socket, addr: Address) -> None:
+        super().__init__(sock, addr)
+        
     def __repr__(self) -> str:
-        return 'Client' + super().__repr__()
+        return f'ServerConnection(sock={self.sock}, addr={self.host_addr})'
 
-@dataclass   
 class ServerConnection(Connection):
-    sock: socket
-    addr: Address
-    
+    def __init__(self, sock: socket, addr: Address) -> None:
+        super().__init__(sock, addr)
+        
     def __repr__(self) -> str:
-        return 'Client' + super().__repr__()
-
+        return f'ServerConnection(sock={self.sock}, addr={self.host_addr})'
 
 type NetworkObject = Union[ServerConnection, ClientConnection, socket]
 

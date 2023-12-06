@@ -63,16 +63,15 @@ class Proxy(BaseServer):
         print(f'[+] Picky started, address: {self._addr}')
         while True:
             client = self.__accept_client()
-            print(f'[+] Logged a new client: {client.addr}')
+            print(f'[+] Logged a new client: {client.host_addr}')
             self.__handle_client(client)
     
     def __init_session(self, client: ClientConnection, server: ServerConnection) -> None:
         """
         Adds a HTTP session to sessions dict.
         """
-        self.__sessions.update(
-            {client: HTTPSession(client, server)}
-        )
+        session = HTTPSession(client, server, True)
+        self.__sessions[client] = session
     
     def __handle_client(self, client: ClientConnection) -> None:
         
@@ -83,21 +82,21 @@ class Proxy(BaseServer):
         self.__init_session(client, web_server)
         
         current_session = self.__sessions[client]
-        target_sock = current_session.get_target_sock()
+        server_sock = current_session.get_server_sock()
         client_sock = current_session.get_client_sock()
         
         while True:
             
-            request, _ = current_session.recv_full_http(from_target=False)
-            safe_send(target_sock, request)
+            request, _ = current_session.recv_full_http(from_server=False)
+            safe_send(server_sock, request)
             
-            response, _ = current_session.recv_full_http(from_target=True)
+            response, _ = current_session.recv_full_http(from_server=True)
             safe_send(client_sock, response)
             
             if not current_session.active():
                 break
         
-        self.__sessions[client].close_session()
+        current_session.close_session()
 
 if __name__ == '__main__':
     waf = Proxy(addr=('127.0.0.1', 8080), target=('127.0.0.1', 50000))
