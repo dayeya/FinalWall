@@ -11,7 +11,7 @@ from threading import Thread
 from typing import Tuple, Union, Dict
 from socket import socket, AF_INET, SOCK_STREAM
 from components import BlackList
-from http_handling import HTTPSession
+from httptools import HTTPSession
 
 def sys_append_modules() -> None:
     """
@@ -23,7 +23,11 @@ def sys_append_modules() -> None:
     sys.path.append(module)
 
 sys_append_modules()
-from common.network_object import ServerConnection, Client, close_all
+from common.network_object import (
+    ServerConnection, 
+    ClientConnection, 
+    close_all
+)
 from common.network import (
     null_ip, 
     loop_back,
@@ -42,14 +46,14 @@ class Proxy(BaseServer):
     """
     def __init__(self, addr: Address, target: Address) -> None:
         self.__target = target
-        self.__sessions: Dict[Client, HTTPSession] = {}
+        self.__sessions: Dict[ClientConnection, HTTPSession] = {}
         self.__blacklist = BlackList()
         
         # Initialize BaseServer.
         super().__init__(addr, ADMIN)
         
-    def __accept_client(self) -> Client:
-        return Client(*self._main_sock.accept())
+    def __accept_client(self) -> ClientConnection:
+        return ClientConnection(*self._main_sock.accept())
     
     def start(self) -> None:
         """
@@ -62,7 +66,7 @@ class Proxy(BaseServer):
             print(f'[+] Logged a new client: {client.addr}')
             self.__handle_client(client)
     
-    def __init_session(self, client: Client, server: ServerConnection) -> None:
+    def __init_session(self, client: ClientConnection, server: ServerConnection) -> None:
         """
         Adds a HTTP session to sessions dict.
         """
@@ -70,7 +74,7 @@ class Proxy(BaseServer):
             {client: HTTPSession(client, server)}
         )
     
-    def __handle_client(self, client: Client) -> None:
+    def __handle_client(self, client: ClientConnection) -> None:
         
         webserver_sock = socket(AF_INET, SOCK_STREAM)
         webserver_sock.connect(self.__target)

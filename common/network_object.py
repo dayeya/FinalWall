@@ -10,53 +10,38 @@ from dataclasses import dataclass
 type Address = Tuple[str, int]
 
 @dataclass(slots=True)
-class Client:
+class Connection:
+    sock: socket
+    host_addr: Address
+
+    @property
+    def address(self) -> Address:
+        return self.host_addr
+    
+    def close(self) -> None:
+        self.sock.close()
+        
+    def __repr__(self) -> str:
+        return f'Connection(sock={self.sock}, addr={self.addr})'
+
+@dataclass(slots=True)
+class ClientConnection(Connection):
     sock: socket
     addr: Address
-
-    @property
-    def port(self) -> str:
-        return self.addr[1]
-
-    @property
-    def ip(self) -> str:
-        return self.addr[0]
-
-    def close(self) -> None:
-        """
-        Closes the socket.
-        :returns: None.
-        """
-        self.sock.close()
     
     def __repr__(self) -> str:
-        """
-        Crafts a str from a client.
-        :returns: Simplified string.
-        """
-        return f'Client(sock={self.sock}, addr={self.addr})'
-    
-@dataclass(slots=True)
-class ServerConnection:
+        return 'Client' + super().__repr__()
+
+@dataclass   
+class ServerConnection(Connection):
     sock: socket
     addr: Address
+    
+    def __repr__(self) -> str:
+        return 'Client' + super().__repr__()
 
-    @property
-    def port(self) -> str:
-        return self.addr[1]
 
-    @property
-    def ip(self) -> str:
-        return self.addr[0]
-
-    def close(self) -> None:
-        """
-        Closes the socket.
-        :returns: None.
-        """
-        self.sock.close()
-
-type NetworkObject = Union[ServerConnection, Client, socket]
+type NetworkObject = Union[ServerConnection, ClientConnection, socket]
 
 def close_all(*args: Tuple[NetworkObject]) -> None:
     """

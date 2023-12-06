@@ -1,8 +1,6 @@
 """
 Author: Daniel Sapojnikov 2023.
-HTTP session.
 """
-
 import os
 import sys
 from socket import socket
@@ -20,20 +18,21 @@ def sys_append_modules() -> None:
 
 sys_append_modules()
 from common.network import safe_recv, SafeRecv
-from common.network_object import ServerConnection, Client, Address, close_all
-
-# ============================================================
-# http session object, defines behaviour of a regular session.
-# ============================================================
+from common.network_object import (
+    ServerConnection, 
+    ClientConnection,  
+    close_all,
+    Address
+)
 
 @dataclass(slots=True)
 class HTTPSession:
-    client_side: Client
-    target_side: ServerConnection
+    client_side: ClientConnection
+    server_side: ServerConnection
     running: bool = field(default_factory=True)
     
     def get_target_sock(self) -> socket:
-        return self.target_side.sock
+        return self.server_side.sock
     
     def get_client_sock(self) -> socket:
         return self.client_side.sock
@@ -43,7 +42,7 @@ class HTTPSession:
         Closes the session.
         """
         self.running = False
-        close_all(self.client_side, self.target_side)
+        close_all(self.client_side, self.server_side)
     
     def active(self) -> bool:
         """
@@ -55,10 +54,10 @@ class HTTPSession:
         """
         Returns a recieved HTTP fragment from target. (maybe  a full HTTP payload)
         """
-        fragment, result = safe_recv(self.target_side.sock, buffer_size=8192)
+        fragment, result = safe_recv(self.server_side.sock, buffer_size=8192)
         if not result:
             self.close_session()
-            close_all(self.client_side, self.target_side)
+            close_all(self.client_side, self.server_side)
         return fragment
         
     def recv_from_client(self) -> bytes:
@@ -68,7 +67,7 @@ class HTTPSession:
         fragment, result = safe_recv(self.client_side.sock, buffer_size=8192)
         if not result:
             self.close_session()
-            close_all(self.client_side, self.target_side)
+            close_all(self.client_side, self.server_side)
         return fragment
     
     def recv_full_http(self, from_target=True) -> SafeRecv:

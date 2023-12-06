@@ -36,12 +36,11 @@ def has_ending_suffix(payload: bytes) -> bool:
     """
     return END_SUFFIX in payload
 
-def get_content_length(payload: bytes, default: int=-1) -> int:
+def get_content_length(response: HTTPSessionResponse, default: int=-1) -> int:
     """
     Matches the content-length field of a raw HTTP payload.
     :params: payload - http packet, default - default value if not found.
     :returns: Content-Length field.
     """
-    response = HTTPSessionResponse(payload)
     content_length = response.getheader('Content-Length', default)
     return int(content_length)
