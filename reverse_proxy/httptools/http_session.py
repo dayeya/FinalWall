@@ -4,7 +4,7 @@ Author: Daniel Sapojnikov 2023.
 import os
 import sys
 from socket import socket
-from typing import Union, Callable
+from typing import Union, Callable, Dict
 from dataclasses import dataclass, field
 from .protocol import HTTPSessionResponse as HTTPResponse
 from .functions import get_content_length
@@ -23,50 +23,51 @@ from common.conversion import to_bytes
 from common.network import safe_recv, SafeRecv
 from common.network_object import (
     ServerConnection, 
-    ClientConnection,  
+    ClientConnection,
+    ConnectionType,
     close_all,
-    Address
+    conn_to_str
 )
-
-type Target = Union[ClientConnection, ServerConnection]
-
-@dataclass(slots=True)
 class HTTPSession:
     """
     This class defines an HTTP session that is intercepted by the Picky proxy.
     """
-    client_side: ClientConnection
-    server_side: ServerConnection
-    running: bool = field(default_factory=False)
-    
-    def get_server_sock(self) -> socket:
-        return self.server_side.sock
-    
-    def get_client_sock(self) -> socket:
-        return self.client_side.sock
-    
-    def __identify_sock(self, target: Target) -> socket:
+    def __init__(self, client: ClientConnection, server: ServerConnection) -> None:
+        self.__client = client
+        self.__server = server
+        self.__running = True
+        self.__bytes_sent: Dict[str, bytes] = {'client': 0,'server': 0}
+        
+    def __identify_sock(self, target: ConnectionType) -> socket:
         """
-        Returns the proper socket based on the targets type.
+        Returns the proper socket based on ConnectionType.
         """
         if isinstance(target, ClientConnection):
             return self.get_client_sock()
         return self.get_server_sock()
+        
+    def get_server_sock(self) -> socket:
+        return self.__server.sock
+    
+    def get_client_sock(self) -> socket:
+        return self.__client.sock
     
     def close_session(self) -> None:
         """
         Closes the session.
         """
-        self.running = False
-        close_all(self.client_side, self.server_side)
+        self.__running = False
+        close_all(self.__client, self.__server)
+        
+        print("[+] Closed session!")
     
     def active(self) -> bool:
         """
         Returns boolean stating if the session is up or not.
         """
-        return self.running
+        return self.__running
 
-    def recv_from(self, target: Target) -> bytes:
+    def recv_from(self, target: ConnectionType) -> bytes:
         """
         Receives HTTP data from 'target'.
         :params: target - identifier of a target.
@@ -76,7 +77,8 @@ class HTTPSession:
         data, result = safe_recv(sock, buffer_size=8192)
         if not result:
             self.close_session()
-            close_all(self.client_side, self.server_side)
+        
+        self.__bytes_sent[conn_to_str(target)] += len(data)
         return data
     
     def recv_full_http(self, from_server=True) -> SafeRecv:
@@ -85,17 +87,17 @@ class HTTPSession:
         :params: sock, buffer.
         :returns: SafeRecv (definition at network.py)
         """
-        target = self.server_side if from_server else self.client_side
+        target = self.__server if from_server else self.__client
         data = bytearray(self.recv_from(target))
-                 
+
         if not self.active():
             return b"", 0
         
         if not from_server:
             return bytes(data), 1
         
-        response = HTTPResponse(to_bytes(data))
         full_len = len(data)
+        response = HTTPResponse(to_bytes(data))
         content_length = get_content_length(response, default=-1)
         
         while full_len <= content_length:

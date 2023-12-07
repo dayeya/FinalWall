@@ -70,7 +70,7 @@ class Proxy(BaseServer):
         """
         Adds a HTTP session to sessions dict.
         """
-        session = HTTPSession(client, server, True)
+        session = HTTPSession(client, server)
         self.__sessions[client] = session
     
     def __handle_client(self, client: ClientConnection) -> None:
@@ -84,19 +84,22 @@ class Proxy(BaseServer):
         current_session = self.__sessions[client]
         server_sock = current_session.get_server_sock()
         client_sock = current_session.get_client_sock()
-        
+    
         while True:
-            
+                
             request, _ = current_session.recv_full_http(from_server=False)
             safe_send(server_sock, request)
             
-            response, _ = current_session.recv_full_http(from_server=True)
-            safe_send(client_sock, response)
+            if request:
+                print(request)
+                response, _ = current_session.recv_full_http(from_server=True)
+                safe_send(client_sock, response)
             
             if not current_session.active():
                 break
-        
+            
         current_session.close_session()
+        del self.__sessions[client]
 
 if __name__ == '__main__':
     waf = Proxy(addr=('127.0.0.1', 8080), target=('127.0.0.1', 50000))
