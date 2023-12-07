@@ -83,8 +83,8 @@ class HTTPSession:
     
     def recv_full_http(self, from_server=True) -> SafeRecv:
         """
-        Receive a complete HTTP packet regarding dataation process.
-        :params: sock, buffer.
+        Returns a full HTTP packet from a side of the connection.
+        :params: from_server.
         :returns: SafeRecv (definition at network.py)
         """
         target = self.__server if from_server else self.__client
