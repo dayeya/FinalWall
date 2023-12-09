@@ -13,6 +13,7 @@ from typing import Tuple, Union, Dict
 from socket import socket, AF_INET, SOCK_STREAM
 from components import BlackList
 from httptools import HTTPSession
+from httptools.errors import WebServerNotRunning
 
 def sys_append_modules() -> None:
     """
@@ -35,8 +36,8 @@ from common.network import (
     loop_back,
     Address,
     create_new_thread, 
-    safe_send, 
-    safe_recv
+    create_new_task,
+    safe_send
 )
 
 class Proxy(BaseServer):
@@ -66,12 +67,19 @@ class Proxy(BaseServer):
         session = HTTPSession(client, server)
         self.__sessions[client] = session
     
+    async def connect_to_webserver(self) -> ServerConnection:
+        sock = socket(AF_INET, SOCK_STREAM)
+        try:
+            sock.connect(self.__target)
+            return ServerConnection(sock, self.__target)
+        
+        except ConnectionRefusedError:
+            raise WebServerNotRunning(f'{self.__target} is not running.')
+        
+    
     async def __handle_client(self, client: ClientConnection) -> None:
         
-        webserver_sock = socket(AF_INET, SOCK_STREAM)
-        webserver_sock.connect(self.__target)
-
-        web_server = ServerConnection(webserver_sock, self.__target)
+        web_server = await self.connect_to_webserver()
         self.__add_session(client, web_server)
         
         current_session = self.__sessions[client]
