@@ -1,6 +1,6 @@
 """
 Author: Daniel Sapojnikov 2023.
-Reverse proxy module of the Picky System.
+Base server of the Woof System.
 """
 
 import os
@@ -31,6 +31,7 @@ class BaseServer:
         self.__establish_socks()
         
         self._main_sock.listen()
+        self._main_sock.setblocking(False)
     
     def __create_socks(self) -> None:
         self._main_sock  = socket(AF_INET, SOCK_STREAM)

@@ -1,6 +1,6 @@
 """
 Author: Daniel Sapojnikov 2023.
-Reverse proxy module of the Picky System.
+Reverse proxy module of the Woof System.
 """
 import os
 import sys
@@ -42,31 +42,31 @@ from common.network import (
 class Proxy(BaseServer):
     def __init__(self, addr: Address, target: Address, admin: Address) -> None:
         self.__target = target
-        self.__sessions: Dict[ClientConnection, HTTPSession] = {}
         self.__blacklist = BlackList()
+        self.__sessions: Dict[ClientConnection, HTTPSession] = {}
         
         # Initialize BaseServer.
         super().__init__(addr, admin)
         
-    def __accept_client(self) -> ClientConnection:
-        return ClientConnection(*self._main_sock.accept())
+    async def __accept_client(self) -> ClientConnection:
+        loop = asyncio.get_event_loop()
+        client, addr = await loop.sock_accept(self._main_sock)
+        print(f'[+] Logged a new client: {addr}')
+        return ClientConnection(client, addr)
     
-    def start(self) -> None:
-        """
-        Boots the proxy, waiting for clients.
-        :returns: None.
-        """
+    async def start(self) -> None:
         print(f'[+] Picky started, address: {self._addr}')
+        
         while True:
-            client = self.__accept_client()
-            print(f'[+] Logged a new client: {client.host_addr}')
-            self.__handle_client(client)
+            client = await self.__accept_client()
+            task = asyncio.create_task(coro=self.__handle_client(client), name=f'{client} Handler')
+            await task
     
     def __add_session(self, client: ClientConnection, server: ServerConnection) -> None:
         session = HTTPSession(client, server)
         self.__sessions[client] = session
     
-    def __handle_client(self, client: ClientConnection) -> None:
+    async def __handle_client(self, client: ClientConnection) -> None:
         
         webserver_sock = socket(AF_INET, SOCK_STREAM)
         webserver_sock.connect(self.__target)
@@ -77,18 +77,16 @@ class Proxy(BaseServer):
         current_session = self.__sessions[client]
         server_sock = current_session.get_server_sock()
         client_sock = current_session.get_client_sock()
-    
-        while True:
-                
-            request, _ = current_session.recv_full_http(from_server=False)
-            safe_send(server_sock, request)
-            
-            if request:
-                response, _ = current_session.recv_full_http(from_server=True)
-                safe_send(client_sock, response)
-            
-            if not current_session.active():
-                break
+        
+        request, _ = await current_session.recv_full_http(from_server=False)
+        await safe_send(server_sock, request)
+        
+        if request:
+            response, _ = await current_session.recv_full_http(from_server=True)
+            await safe_send(client_sock, response)
+        
+        if not current_session.active():
+            return
             
         current_session.close_session()
         del self.__sessions[client]
@@ -96,4 +94,4 @@ class Proxy(BaseServer):
 if __name__ == '__main__':
     webserver, proxy, admin = load_config('network.toml') 
     waf = Proxy(addr=proxy, target=webserver, admin=admin)
-    waf.start()
+    asyncio.run(waf.start())

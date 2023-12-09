@@ -28,6 +28,7 @@ from common.network_object import (
     close_all,
     conn_to_str
 )
+
 class HTTPSession:
     """
     This class defines an HTTP session that is intercepted by the Picky proxy.
@@ -55,17 +56,17 @@ class HTTPSession:
     def active(self) -> bool:
         return self.__running
 
-    def recv_from(self, conn: ConnectionType) -> bytes:
+    async def recv_from(self, conn: ConnectionType) -> bytes:
         """
         Receives data from a connection.
         """
-        data, result = safe_recv(conn.sock, buffer_size=8192)
+        data, result = await safe_recv(conn.sock, buffer_size=8192)
         if not result:
             self.close_session()
         return data
     
-    def __recv_from_server(self) -> SafeRecv:
-        data = bytearray(self.recv_from(self.__server))
+    async def __recv_from_server(self) -> SafeRecv:
+        data = bytearray(await self.recv_from(self.__server))
 
         if not self.active():
             return b"", 0
@@ -74,7 +75,7 @@ class HTTPSession:
         content_length = get_content_length(response, default=-1)
         
         while len(data) <= content_length:
-            fragment = self.recv_from(self.__server)
+            fragment = await self.recv_from(self.__server)
             if not self.active():
                 return b"", 0
             data.extend(fragment)
@@ -82,14 +83,14 @@ class HTTPSession:
         print(f'[+] Server sent: {len(data)} bytes')
         return bytes(data), 1
     
-    def __recv_from_client(self) -> SafeRecv:
-        data = bytearray(self.recv_from(self.__client))
+    async def __recv_from_client(self) -> SafeRecv:
+        data = bytearray(await self.recv_from(self.__client))
 
-        if not self.active():
+        if not self.active(): 
             return b"", 0
 
         while not has_ending_suffix(data):
-            fragment = self.recv_from(self.__client)
+            fragment = await self.recv_from(self.__client)
             if not self.active():
                 return b"", 0
             data.extend(fragment)
@@ -97,12 +98,13 @@ class HTTPSession:
         print(f'[+] Client sent: {len(data)} bytes')
         return bytes(data), 1
     
-    def recv_full_http(self, from_server=True) -> SafeRecv:
+    async def recv_full_http(self, from_server=True) -> SafeRecv:
         
-        __recv_func = self.__recv_from_server if from_server \
-                 else self.__recv_from_client
-                 
-        data, result = __recv_func()
+        match from_server:
+            case True: __recv_func = self.__recv_from_server
+            case False: __recv_func = self.__recv_from_client
+        
+        data, result = await __recv_func()
         if not self.active():
             return b"", 0
 
