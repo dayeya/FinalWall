@@ -1,0 +1,14 @@
+# Author: Daniel Sapojnikov 2023.
+# This TOML file provides important network configuration for the system.
+
+[WebServer]
+ip = "localhost"
+port = 50000
+
+[Proxy]
+ip = "localhost"
+port = 8080
+
+[Admin]
+ip = "localhost"
+port = 60000

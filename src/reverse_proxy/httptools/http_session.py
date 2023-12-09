@@ -7,7 +7,7 @@ from socket import socket
 from typing import Union, Callable, Dict
 from dataclasses import dataclass, field
 from .protocol import HTTPSessionResponse as HTTPResponse
-from .functions import get_content_length
+from .functions import get_content_length, has_ending_suffix
 
 def sys_append_modules() -> None:
     """
@@ -22,9 +22,9 @@ sys_append_modules()
 from common.conversion import to_bytes
 from common.network import safe_recv, SafeRecv
 from common.network_object import (
+    ConnectionType,
     ServerConnection, 
     ClientConnection,
-    ConnectionType,
     close_all,
     conn_to_str
 )
@@ -33,77 +33,80 @@ class HTTPSession:
     This class defines an HTTP session that is intercepted by the Picky proxy.
     """
     def __init__(self, client: ClientConnection, server: ServerConnection) -> None:
+        self.__running = True
         self.__client = client
         self.__server = server
-        self.__running = True
         self.__bytes_sent: Dict[str, bytes] = {'client': 0,'server': 0}
-        
-    def __identify_sock(self, target: ConnectionType) -> socket:
-        """
-        Returns the proper socket based on ConnectionType.
-        """
-        if isinstance(target, ClientConnection):
-            return self.get_client_sock()
-        return self.get_server_sock()
-        
-    def get_server_sock(self) -> socket:
-        return self.__server.sock
-    
+
+    def __get_sock(self, conn: ConnectionType) -> socket:
+        return conn.sock
+
     def get_client_sock(self) -> socket:
-        return self.__client.sock
+        return self.__get_sock(self.__client)
     
+    def get_server_sock(self) -> socket:
+        return self.__get_sock(self.__server)
+        
     def close_session(self) -> None:
-        """
-        Closes the session.
-        """
         self.__running = False
         close_all(self.__client, self.__server)
-        
         print("[+] Closed session!")
     
     def active(self) -> bool:
-        """
-        Returns boolean stating if the session is up or not.
-        """
         return self.__running
 
-    def recv_from(self, target: ConnectionType) -> bytes:
+    def recv_from(self, conn: ConnectionType) -> bytes:
         """
-        Receives HTTP data from 'target'.
-        :params: target - identifier of a target.
-        :returns: HTTP data bytes.
+        Receives data from a connection.
         """
-        sock = self.__identify_sock(target)
-        data, result = safe_recv(sock, buffer_size=8192)
+        data, result = safe_recv(conn.sock, buffer_size=8192)
         if not result:
             self.close_session()
-        
-        self.__bytes_sent[conn_to_str(target)] += len(data)
         return data
     
-    def recv_full_http(self, from_server=True) -> SafeRecv:
-        """
-        Returns a full HTTP packet from a side of the connection.
-        :params: from_server.
-        :returns: SafeRecv (definition at network.py)
-        """
-        target = self.__server if from_server else self.__client
-        data = bytearray(self.recv_from(target))
+    def __recv_from_server(self) -> SafeRecv:
+        data = bytearray(self.recv_from(self.__server))
 
         if not self.active():
             return b"", 0
         
-        if not from_server:
-            return bytes(data), 1
-        
-        full_len = len(data)
         response = HTTPResponse(to_bytes(data))
         content_length = get_content_length(response, default=-1)
         
-        while full_len <= content_length:
-            data.extend(self.recv_from(target))
+        while len(data) <= content_length:
+            fragment = self.recv_from(self.__server)
             if not self.active():
                 return b"", 0
-            full_len = len(data)
-            
+            data.extend(fragment)
+        
+        print(f'[+] Server sent: {len(data)} bytes')
         return bytes(data), 1
+    
+    def __recv_from_client(self) -> SafeRecv:
+        data = bytearray(self.recv_from(self.__client))
+
+        if not self.active():
+            return b"", 0
+
+        while not has_ending_suffix(data):
+            fragment = self.recv_from(self.__client)
+            if not self.active():
+                return b"", 0
+            data.extend(fragment)
+
+        print(f'[+] Client sent: {len(data)} bytes')
+        return bytes(data), 1
+    
+    def recv_full_http(self, from_server=True) -> SafeRecv:
+        
+        __recv_func = self.__recv_from_server if from_server \
+                 else self.__recv_from_client
+                 
+        data, result = __recv_func()
+        if not self.active():
+            return b"", 0
+
+        conn = conn_to_str(self.__server if from_server else self.__client)
+        self.__bytes_sent[conn] += len(data)
+        
+        return data, result

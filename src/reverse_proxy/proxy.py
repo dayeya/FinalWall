@@ -4,6 +4,7 @@ Reverse proxy module of the Picky System.
 """
 import os
 import sys
+import json
 import asyncio
 import argparse
 from base import BaseServer
@@ -23,6 +24,7 @@ def sys_append_modules() -> None:
     sys.path.append(module)
 
 sys_append_modules()
+from config import load_config
 from common.network_object import (
     ServerConnection, 
     ClientConnection, 
@@ -37,20 +39,14 @@ from common.network import (
     safe_recv
 )
 
-# Add admin addr.
-ADMIN = ()
-
 class Proxy(BaseServer):
-    """
-    Proxy class for Picky.
-    """
-    def __init__(self, addr: Address, target: Address) -> None:
+    def __init__(self, addr: Address, target: Address, admin: Address) -> None:
         self.__target = target
         self.__sessions: Dict[ClientConnection, HTTPSession] = {}
         self.__blacklist = BlackList()
         
         # Initialize BaseServer.
-        super().__init__(addr, ADMIN)
+        super().__init__(addr, admin)
         
     def __accept_client(self) -> ClientConnection:
         return ClientConnection(*self._main_sock.accept())
@@ -66,20 +62,19 @@ class Proxy(BaseServer):
             print(f'[+] Logged a new client: {client.host_addr}')
             self.__handle_client(client)
     
-    def __init_session(self, client: ClientConnection, server: ServerConnection) -> None:
-        """
-        Adds a HTTP session to sessions dict.
-        """
+    def __add_session(self, client: ClientConnection, server: ServerConnection) -> None:
         session = HTTPSession(client, server)
         self.__sessions[client] = session
     
     def __handle_client(self, client: ClientConnection) -> None:
+
+        print(self.__target)
         
         webserver_sock = socket(AF_INET, SOCK_STREAM)
         webserver_sock.connect(self.__target)
-        
+
         web_server = ServerConnection(webserver_sock, self.__target)
-        self.__init_session(client, web_server)
+        self.__add_session(client, web_server)
         
         current_session = self.__sessions[client]
         server_sock = current_session.get_server_sock()
@@ -91,7 +86,6 @@ class Proxy(BaseServer):
             safe_send(server_sock, request)
             
             if request:
-                print(request)
                 response, _ = current_session.recv_full_http(from_server=True)
                 safe_send(client_sock, response)
             
@@ -102,5 +96,6 @@ class Proxy(BaseServer):
         del self.__sessions[client]
 
 if __name__ == '__main__':
-    waf = Proxy(addr=('127.0.0.1', 8080), target=('127.0.0.1', 50000))
-    asyncio.run(waf.start())
+    webserver, proxy, admin = load_config('network.toml') 
+    waf = Proxy(addr=proxy, target=webserver, admin=admin)
+    waf.start()

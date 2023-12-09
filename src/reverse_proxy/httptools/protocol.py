@@ -6,27 +6,23 @@ General HTTP objects to use.
 from io import BytesIO
 from http.client import HTTPResponse
 from http.server import BaseHTTPRequestHandler
-
 class BytesSocket:
     """
     Basic BytesIO socket wrapper.
     """
     def __init__(self, payload_bytes: bytes) -> None:
-        """
-        __init__ for wrapping BytesIO.
-        """
         self._file = BytesIO(payload_bytes)
         
     def makefile(self, *args, **kwargs) -> BytesIO:
         """
         'Override' like function of socket.makefile()
-        Return the underlying BytesIO object.
+        :returns: the underlying BytesIO object.
         """
         return self._file
 
 class HTTPRequest(BaseHTTPRequestHandler):
     """
-    Basic Wrapper to a http request for parsing and using raw bytes.
+    HTTP request parser.
     """
     def __init__(self, raw_packet: bytes) -> None:
         self._chunk = raw_packet
@@ -37,7 +33,7 @@ class HTTPRequest(BaseHTTPRequestHandler):
         
 class HTTPSessionResponse(HTTPResponse):
     """
-    Basic parser to a HTTP response from raw bytes.
+    HTTP response parser.
     """
     def __init__(self, packet: bytes) -> None:
         self._chunk = packet.split(b'\r\n\r\n', 1)[0]

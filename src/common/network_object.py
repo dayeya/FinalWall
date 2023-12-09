@@ -45,10 +45,10 @@ def close_all(*objects: Tuple[NetworkObject]) -> None:
     """
     Closes all network objects that have .close()
     """
-    for closeable in objects:
-        classify = closeable.__class__.__name__
+    for closable in objects:
+        classify = closable.__class__.__name__
         try:
-            closeable.close()
+            closable.close()
             print(f'[!] A {classify} object was closed successfuly!')
         except Exception as close_error:
             print(f'[!] {classify}.close() was not complete. {close_error}')
@@ -56,7 +56,6 @@ def close_all(*objects: Tuple[NetworkObject]) -> None:
 def conn_to_str(conn_type: ConnectionType) -> str:
     """
     Converts the ConnectionType into a string.
-    :params: conn_type.
-    :returns: repr string.
+    :returns: ClientConnection -> "client", ServerConnection -> "server.
     """
     return repr(conn_type)[:6].lower()
