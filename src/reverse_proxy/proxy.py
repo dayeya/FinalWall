@@ -67,8 +67,6 @@ class Proxy(BaseServer):
         self.__sessions[client] = session
     
     def __handle_client(self, client: ClientConnection) -> None:
-
-        print(self.__target)
         
         webserver_sock = socket(AF_INET, SOCK_STREAM)
         webserver_sock.connect(self.__target)
