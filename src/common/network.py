@@ -1,6 +1,6 @@
 """
 Author: Daniel Sapojnikov, 2023.
-Network module contains useful function related to networking.
+The network module contains useful functions related to networking.
 """
 
 import asyncio
