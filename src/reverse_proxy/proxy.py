@@ -60,7 +60,10 @@ class Proxy(BaseServer):
         
         while True:
             client = await self.__accept_client()
-            task = asyncio.create_task(coro=self.__handle_client(client), name=f'{client} Handler')
+            
+            task: asyncio.Task = create_new_task(
+                task_name=f'{client.host_addr} Handler', 
+                task=self.__handle_client, args=(client, ))
             await task
     
     def __add_session(self, client: ClientConnection, server: ServerConnection) -> None:
@@ -75,7 +78,6 @@ class Proxy(BaseServer):
         
         except ConnectionRefusedError:
             raise WebServerNotRunning(f'{self.__target} is not running.')
-        
     
     async def __handle_client(self, client: ClientConnection) -> None:
         
