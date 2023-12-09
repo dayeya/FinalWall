@@ -1,4 +1,4 @@
-# Picky - Web application firewall.
+# Woof - Web application firewall.
 
 My Final YB Project.
 
