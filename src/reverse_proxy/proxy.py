@@ -6,7 +6,6 @@ import os
 import sys
 import json
 import asyncio
-import argparse
 from base import BaseServer
 from threading import Thread
 from typing import Tuple, Union, Dict
@@ -52,7 +51,6 @@ class Proxy(BaseServer):
     async def __accept_client(self) -> ClientConnection:
         loop = asyncio.get_event_loop()
         client, addr = await loop.sock_accept(self._main_sock)
-        print(f'[+] Logged a new client: {addr}')
         return ClientConnection(client, addr)
     
     async def start(self) -> None:
@@ -60,10 +58,12 @@ class Proxy(BaseServer):
         
         while True:
             client = await self.__accept_client()
+            print(f'[+] Logged a new client: {client.host_addr}')
             
             task: asyncio.Task = create_new_task(
                 task_name=f'{client.host_addr} Handler', 
-                task=self.__handle_client, args=(client, ))
+                task=self.__handle_client, 
+                args=(client, ))
             await task
     
     def __add_session(self, client: ClientConnection, server: ServerConnection) -> None:

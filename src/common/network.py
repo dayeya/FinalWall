@@ -81,4 +81,8 @@ def create_new_thread(func: Callable, *args: tuple) -> Thread:
     return Thread(target=func, args=args)
 
 def create_new_task(task_name:str, task: Callable, args: tuple) -> asyncio.Task:
+    """
+    Creates a new task.
+    :returns: Task.
+    """
     return asyncio.create_task(name=task_name, coro=task(*args))
