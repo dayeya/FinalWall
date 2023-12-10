@@ -9,7 +9,7 @@ Woof detects, monitors, and protects websites from the following web attacks.
 
 # Configuration
 Woof protects one website at a time. An admin may deploy another Woof process to protect another website.
-This project uses a given website vulnerable to SQL Injection documented at [Example Website](https://github.com/dayeya/SQLi/blob/main/README.md).
+This project uses a given website vulnerable to SQL Injection documented at [docs](https://github.com/dayeya/SQLi/blob/main/README.md).
 
 # Contributions
 This project was written only by Dayeya, as opposed to the contributors list.

@@ -17,7 +17,7 @@ def sys_append_modules() -> None:
     sys.path.append(module)
 
 sys_append_modules()
-from common.network import Address
+from common.aionetwork import Address
 
 class BaseServer:
     """

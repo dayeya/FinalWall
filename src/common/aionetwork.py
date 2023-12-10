@@ -1,6 +1,6 @@
 """
 Author: Daniel Sapojnikov, 2023.
-The network module contains useful functions related to networking.
+The asyncio Network module provides simple async networking capabilities.
 """
 
 import asyncio

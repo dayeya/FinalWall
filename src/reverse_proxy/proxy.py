@@ -26,15 +26,11 @@ def sys_append_modules() -> None:
 sys_append_modules()
 from config import load_config
 from common.network_object import (
-    ServerConnection, 
-    ClientConnection, 
-    close_all
+    ServerConnection,
+    ClientConnection,
 )
-from common.network import (
-    null_ip, 
-    loop_back,
+from common.aionetwork import (
     Address,
-    create_new_thread, 
     create_new_task,
     safe_send
 )
@@ -49,6 +45,10 @@ class Proxy(BaseServer):
         super().__init__(addr, admin)
         
     async def __accept_client(self) -> ClientConnection:
+        """
+        Waits for a client.
+        :returns: ClientConnection.
+        """
         loop = asyncio.get_event_loop()
         client, addr = await loop.sock_accept(self._main_sock)
         return ClientConnection(client, addr)

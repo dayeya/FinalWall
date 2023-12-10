@@ -20,7 +20,7 @@ def sys_append_modules() -> None:
 
 sys_append_modules()
 from common.conversion import to_bytes
-from common.network import safe_recv, SafeRecv
+from common.aionetwork import safe_recv, SafeRecv
 from common.network_object import (
     ConnectionType,
     ServerConnection, 
