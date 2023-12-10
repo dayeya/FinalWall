@@ -1,5 +1,5 @@
 # Woof
-This project aims to develop a robust and secure Web Application Firewall for websites.
+This project aims to develop a robust and secure Web Application Firewall for websites.<br>
 Woof detects, monitors, and protects websites from the following web attacks.
 
 * Blind/No-Blind SQL Injection.
