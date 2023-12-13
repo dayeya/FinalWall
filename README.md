@@ -14,5 +14,8 @@ This project uses a given website vulnerable to SQL Injection documented at [doc
 # Protocol
 Blanket uses a simple protocol called blanket and built-in policies to block malicious.
 
+# Database
+In progress.
+
 # Contributions
 This project was written only by Dayeya, as opposed to the contributors list.
