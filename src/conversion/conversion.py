@@ -1,15 +1,10 @@
 """
 Author: Daniel Sapojnikov, 2023.
-Conversion module, contains useful conversion methods.
+The conversion module contains useful conversion methods.
 """
 from functools import partial
 
 def convert(n: str, base: int=10) -> int:
-    """
-    Converts a number into integer based on specific base.
-    :params: n: number to convert, base: base of conversion.
-    :returns: converted integer.
-    """
     try:
         return int(n, base=base)
     except ValueError:
