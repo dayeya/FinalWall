@@ -3,8 +3,8 @@ Author: Daniel Sapojnikov 2023.
 Client Class used to define clients across the LAN.
 """
 
-from socket import socket
 from typing import Tuple, Union
+from socket import socket, MSG_PEEK
 from dataclasses import dataclass
 
 type Address = Tuple[str, int]
@@ -42,9 +42,6 @@ type ConnectionType = Union[ClientConnection, ServerConnection]
 type NetworkObject = Union[ConnectionType, socket]
 
 def close_all(*objects: Tuple[NetworkObject]) -> None:
-    """
-    Closes all network objects that have .close()
-    """
     for closable in objects:
         classify = closable.__class__.__name__
         try:
@@ -52,6 +49,13 @@ def close_all(*objects: Tuple[NetworkObject]) -> None:
             print(f'[!] A {classify} object was closed successfuly!')
         except Exception as close_error:
             print(f'[!] {classify}.close() was not complete. {close_error}')
+            
+def is_closed(object: NetworkObject) -> bool:
+    try:
+        obj_sock = object.sock if not isinstance(object, socket) else object
+        return not bool(obj_sock.recv(1, MSG_PEEK))
+    except:
+        return True
             
 def conn_to_str(conn_type: ConnectionType) -> str:
     """

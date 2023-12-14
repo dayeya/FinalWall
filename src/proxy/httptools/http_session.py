@@ -27,6 +27,7 @@ from net.network_object.network_object import (
     ServerConnection, 
     ClientConnection,
     close_all,
+    is_closed,
     conn_to_str
 )
 
@@ -48,64 +49,49 @@ class HTTPSession:
         return self.__recv_from_server
     @property
     def client_sock(self) -> socket:
-        return self.__get_sock(self.__client)
+        return self.__client.sock
     @property
     def server_sock(self) -> socket:
-        return self.__get_sock(self.__server)
-
-    def __get_sock(self, conn: ConnectionType) -> socket:
-        return conn.sock
+        return self.__server.sock
     
     def close_session(self) -> None:
-        self.__running = False
         close_all(self.__client, self.__server)
     
     def active(self) -> bool:
-        return self.__running
+        return is_closed(self.client_sock) or is_closed(self.server_sock)
 
     async def recv_from(self, conn: ConnectionType) -> bytes:
-        """
-        Receives data from a connection.
-        """
         data, result = await safe_recv(conn.sock, buffer_size=8192)
         if not result:
             self.close_session()
-            
         self.__bytes_sent[conn_to_str(conn)] += len(data)
         return data
     
     async def __recv_from_server(self) -> SafeRecv:
         data = bytearray(await self.recv_from(self.__server))
-
         if not self.active():
             return b"", 0
         
         response = HTTPResponse(to_bytes(data))
         content_length = get_content_length(response, default=-1)
-        
         while len(data) <= content_length:
-            fragment = await self.recv_from(self.__server)
+            data.extend(await self.recv_from(self.__server))
             if not self.active():
                 return b"", 0
-            data.extend(fragment)
-        
-        print(f'[+] Server sent: {len(data)} bytes')
-        return bytes(data), 1
+            
+        return to_bytes(data), 1
     
     async def __recv_from_client(self) -> SafeRecv:
         data = bytearray(await self.recv_from(self.__client))
-
         if not self.active(): 
             return b"", 0
-
+        
         while not has_ending_suffix(data):
-            fragment = await self.recv_from(self.__client)
+            data.extend(await self.recv_from(self.__client))
             if not self.active():
                 return b"", 0
-            data.extend(fragment)
-
-        print(f'[+] Client sent: {len(data)} bytes')
-        return bytes(data), 1
+            
+        return to_bytes(data), 1
     
     async def recv_full_http(self, recv_func: Callable) -> bytes:
         data, _ = await recv_func()
