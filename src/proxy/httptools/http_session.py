@@ -7,7 +7,7 @@ from socket import socket
 from abc import ABC, abstractmethod
 from typing import Union, Callable, Dict
 from dataclasses import dataclass, field
-from .protocol import HTTPSessionResponse as HTTPResponse
+from .protocol import HTTPResponseParser as HTTPResponse
 from .functions import get_content_length, has_ending_suffix
 
 def sys_append_modules() -> None:

@@ -2,10 +2,10 @@
 Author: Daniel Sapojnikov 2023.
 General HTTP objects to use.
 """
-
 from io import BytesIO
 from http.client import HTTPResponse
 from http.server import BaseHTTPRequestHandler
+
 class BytesSocket:
     """
     Basic BytesIO socket wrapper.
@@ -20,10 +20,7 @@ class BytesSocket:
         """
         return self._file
 
-class HTTPRequest(BaseHTTPRequestHandler):
-    """
-    HTTP request parser.
-    """
+class HTTPRequestParser(BaseHTTPRequestHandler):
     def __init__(self, raw_packet: bytes) -> None:
         self._chunk = raw_packet
         self.__bytes_file = BytesSocket(self._chunk)
@@ -31,7 +28,7 @@ class HTTPRequest(BaseHTTPRequestHandler):
         super().__init__(self.__bytes_file)
         self.parse_request()
         
-class HTTPSessionResponse(HTTPResponse):
+class HTTPResponseParser(HTTPResponse):
     """
     HTTP response parser.
     """
