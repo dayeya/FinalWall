@@ -12,10 +12,7 @@ Blanket protects one website at a time. An admin may deploy another Blanket to p
 This project uses a given website vulnerable to SQL Injection documented at [docs](https://github.com/dayeya/SQLi/blob/main/README.md).
 
 # Attack detection and prevention
-Blanket uses a simple protocol called blanket and built-in policies to block malicious traffic.
-
-## Protocol
-The blanket protocol covers HTTP sessions and cuts them off when needed. Each blanket handles data analysis.
+Blanket uses built-in policies and rules to block malicious data. Blanket supports dynamically added policies and uses whitelists and blacklists to strengthen its defensive capabilities.
 
 # Database
 In progress.
