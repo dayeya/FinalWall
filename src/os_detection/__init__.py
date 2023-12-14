@@ -1,0 +1,1 @@
+from .osfp import fingerprint
