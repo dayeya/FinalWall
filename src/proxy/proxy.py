@@ -80,14 +80,14 @@ class Proxy(BaseServer):
         self.__add_session(client, web_server)
         
         current_session = self.__sessions[client]
-        server_sock = current_session.get_server_sock()
-        client_sock = current_session.get_client_sock()
+        server_sock = current_session.server_sock
+        client_sock = current_session.client_sock
         
-        request, _ = await current_session.recv_full_http(from_server=False)
+        request = await current_session.recv_full_http(current_session.client_recv)
         await safe_send(server_sock, request)
         
         if request:
-            response, _ = await current_session.recv_full_http(from_server=True)
+            response = await current_session.recv_full_http(current_session.server_recv)
             await safe_send(client_sock, response)
         
         if not current_session.active():

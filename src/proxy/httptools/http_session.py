@@ -39,20 +39,26 @@ class HTTPSession:
         self.__client = client
         self.__server = server
         self.__bytes_sent: Dict[str, bytes] = {'client': 0,'server': 0}
+        
+    @property
+    def client_recv(self) -> Callable:
+        return self.__recv_from_client
+    @property
+    def server_recv(self) -> Callable:
+        return self.__recv_from_server
+    @property
+    def client_sock(self) -> socket:
+        return self.__get_sock(self.__client)
+    @property
+    def server_sock(self) -> socket:
+        return self.__get_sock(self.__server)
 
     def __get_sock(self, conn: ConnectionType) -> socket:
         return conn.sock
-
-    def get_client_sock(self) -> socket:
-        return self.__get_sock(self.__client)
     
-    def get_server_sock(self) -> socket:
-        return self.__get_sock(self.__server)
-        
     def close_session(self) -> None:
         self.__running = False
         close_all(self.__client, self.__server)
-        print("[+] Closed session!")
     
     def active(self) -> bool:
         return self.__running
@@ -64,6 +70,8 @@ class HTTPSession:
         data, result = await safe_recv(conn.sock, buffer_size=8192)
         if not result:
             self.close_session()
+            
+        self.__bytes_sent[conn_to_str(conn)] += len(data)
         return data
     
     async def __recv_from_server(self) -> SafeRecv:
@@ -99,16 +107,8 @@ class HTTPSession:
         print(f'[+] Client sent: {len(data)} bytes')
         return bytes(data), 1
     
-    async def recv_full_http(self, from_server) -> SafeRecv:
-        
-        if from_server: __recv_func = self.__recv_from_server
-        else: __recv_func = self.__recv_from_client
-        
-        data, result = await __recv_func()
+    async def recv_full_http(self, recv_func: Callable) -> bytes:
+        data, _ = await recv_func()
         if not self.active():
             return b"", 0
-
-        conn = conn_to_str(self.__server if from_server else self.__client)
-        self.__bytes_sent[conn] += len(data)
-        
-        return data, result
+        return data
