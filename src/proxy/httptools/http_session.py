@@ -109,6 +109,4 @@ class HTTPSession:
     
     async def recv_full_http(self, recv_func: Callable) -> bytes:
         data, _ = await recv_func()
-        if not self.active():
-            return b"", 0
         return data
