@@ -2,13 +2,13 @@
 # This TOML file provides important network configuration for the system.
 
 [WebServer]
-ip = "localhost"
+ip = "127.0.0.1"
 port = 50000
 
 [Proxy]
-ip = "localhost"
+ip = "127.0.0.1"
 port = 8080
 
 [Admin]
-ip = "localhost"
+ip = "127.0.0.1"
 port = 60000

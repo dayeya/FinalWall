@@ -7,7 +7,7 @@ import asyncio
 from socket import socket
 from typing import Tuple, Callable, Union
 from threading import Thread
-from .conversion import decode, encode
+from conversion.conversion import decode, encode
 
 # Universal networking constants.
 null_ip = "0.0.0.0"

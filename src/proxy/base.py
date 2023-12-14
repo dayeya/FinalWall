@@ -1,8 +1,3 @@
-"""
-Author: Daniel Sapojnikov 2023.
-Base server of the Woof System.
-"""
-
 import os
 import sys
 from socket import socket, AF_INET, SOCK_STREAM
@@ -17,7 +12,7 @@ def sys_append_modules() -> None:
     sys.path.append(module)
 
 sys_append_modules()
-from common.aionetwork import Address
+from net.aionetwork.aionetwork import Address
 
 class BaseServer:
     """

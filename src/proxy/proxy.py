@@ -1,7 +1,3 @@
-"""
-Author: Daniel Sapojnikov 2023.
-Reverse proxy module of the Woof System.
-"""
 import os
 import sys
 import json
@@ -25,11 +21,11 @@ def sys_append_modules() -> None:
 
 sys_append_modules()
 from config import load_config
-from common.network_object import (
+from net.network_object.network_object import (
     ServerConnection,
     ClientConnection,
 )
-from common.aionetwork import (
+from net.aionetwork.aionetwork import (
     Address,
     create_new_task,
     safe_send
@@ -54,7 +50,7 @@ class Proxy(BaseServer):
         return ClientConnection(client, addr)
     
     async def start(self) -> None:
-        print(f'[+] Picky started, address: {self._addr}')
+        print(f'[+] Blanket started, address: {self._addr}')
         
         while True:
             client = await self.__accept_client()
@@ -80,7 +76,6 @@ class Proxy(BaseServer):
             raise WebServerNotRunning(f'{self.__target} is not running.')
     
     async def __handle_client(self, client: ClientConnection) -> None:
-        
         web_server = await self.connect_to_webserver()
         self.__add_session(client, web_server)
         

@@ -2,12 +2,7 @@
 Author: Daniel Sapojnikov 2023.
 http functions module.
 """
-import os
-import re
-import sys
-import asyncio
-from socket import socket
-from .protocol import HTTPRequest, HTTPSessionResponse
+from .protocol import HTTPSessionResponse
 
 END_SUFFIX = b'\r\n\r\n'
     

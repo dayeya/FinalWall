@@ -4,6 +4,7 @@ Author: Daniel Sapojnikov 2023.
 import os
 import sys
 from socket import socket
+from abc import ABC, abstractmethod
 from typing import Union, Callable, Dict
 from dataclasses import dataclass, field
 from .protocol import HTTPSessionResponse as HTTPResponse
@@ -19,9 +20,9 @@ def sys_append_modules() -> None:
     sys.path.append(module)
 
 sys_append_modules()
-from common.conversion import to_bytes
-from common.aionetwork import safe_recv, SafeRecv
-from common.network_object import (
+from conversion.conversion import to_bytes
+from net.aionetwork.aionetwork import safe_recv, SafeRecv
+from net.network_object.network_object import (
     ConnectionType,
     ServerConnection, 
     ClientConnection,
@@ -98,11 +99,10 @@ class HTTPSession:
         print(f'[+] Client sent: {len(data)} bytes')
         return bytes(data), 1
     
-    async def recv_full_http(self, from_server=True) -> SafeRecv:
+    async def recv_full_http(self, from_server) -> SafeRecv:
         
-        match from_server:
-            case True: __recv_func = self.__recv_from_server
-            case False: __recv_func = self.__recv_from_client
+        if from_server: __recv_func = self.__recv_from_server
+        else: __recv_func = self.__recv_from_client
         
         data, result = await __recv_func()
         if not self.active():
