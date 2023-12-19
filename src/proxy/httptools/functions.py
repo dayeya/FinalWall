@@ -12,3 +12,6 @@ def has_ending_suffix(payload: bytes) -> bool:
 def get_content_length(payload: HTTPRequestParser, default: int=-1) -> int:
     content_length = payload.getheader('Content-Length', default)
     return int(content_length)
+
+def get_agent(payload: HTTPRequestParser) -> str:
+    return payload.getheader('User-Agent', default='Unknown Agent')
