@@ -1,1 +1,0 @@
-# load C functions from funcs.c

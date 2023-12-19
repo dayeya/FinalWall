@@ -97,6 +97,8 @@ class Proxy(BaseServer):
         del self.__sessions[client]
 
 if __name__ == '__main__':
+    import stringtools
+    print(stringtools.sum_as_string(1, 3))
     webserver, proxy, admin = load_config('network.toml') 
     waf = Proxy(addr=proxy, target=webserver, admin=admin)
     asyncio.run(waf.start())
