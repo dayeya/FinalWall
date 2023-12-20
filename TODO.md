@@ -1,2 +1,4 @@
 # TODO List
-- Basic proxy behaviour
+- Create admin setup.
+- Create basic rules and dynamic rules.
+- (*) Bind httptools/functions.py to Rust.
