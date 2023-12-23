@@ -1,2 +1,2 @@
-def fingerprint() -> None:
+def fingerprint() -> str:
     return 'Whoa!'
