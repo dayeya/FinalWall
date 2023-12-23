@@ -38,14 +38,14 @@ async def safe_recv(sock: socket, buffer_size: int) -> SafeRecv:
     async def recv_wrapper(sock: socket, loop: asyncio.AbstractEventLoop, buffer: int) -> recv_result:
         try:
             data = await loop.sock_recv(sock, buffer)
-        except:
+        except asyncio.IncompleteReadError:
             return b"", 0
             
         if len(data) == buffer:
             while True:
                 try:
                     data += await loop.sock_recv(sock, buffer)
-                except:
+                except asyncio.IncompleteReadError:
                     break
         return data, 1
 

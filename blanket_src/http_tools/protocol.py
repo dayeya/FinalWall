@@ -6,9 +6,6 @@ from http.client import HTTPResponse
 from http.server import BaseHTTPRequestHandler
 
 class BytesSocket:
-    """
-    Basic BytesIO socket wrapper.
-    """
     def __init__(self, payload_bytes: bytes) -> None:
         self._file = BytesIO(payload_bytes)
         
