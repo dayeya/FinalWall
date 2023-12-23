@@ -5,8 +5,8 @@ import os
 import sys
 from socket import socket
 from typing import Callable, Dict
-from ..protocol import HTTPResponseParser as HTTPResponse
-from ..functions import get_content_length, has_ending_suffix
+from http_tools.protocol import HTTPResponseParser as HTTPResponse
+from http_tools.functions import get_content_length, has_ending_suffix
 
 def sys_append_modules() -> None:
     """

@@ -14,7 +14,6 @@ null_ip = "0.0.0.0"
 loop_back = '127.0.0.1'
 Address = Tuple[str, int]
 
-# Custom types.
 type send_result = int
 type recv_result = Tuple[bytes, int]
 type SafeSend = int
