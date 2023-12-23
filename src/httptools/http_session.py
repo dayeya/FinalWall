@@ -20,7 +20,6 @@ def sys_append_modules() -> None:
     sys.path.append(module)
 
 sys_append_modules()
-from conversion.conversion import to_bytes
 from net.aionetwork.aionetwork import safe_recv, SafeRecv
 from net.network_object.network_object import (
     ConnectionType,
@@ -72,14 +71,14 @@ class HTTPSession:
         if not self.active():
             return b"", 0
         
-        response = HTTPResponse(to_bytes(data))
+        response = HTTPResponse(bytes(data))
         content_length = get_content_length(response, default=-1)
         while len(data) <= content_length:
             data.extend(await self.recv_from(self.__server))
             if not self.active():
                 return b"", 0
             
-        return to_bytes(data), 1
+        return bytes(data), 1
     
     async def __recv_from_client(self) -> SafeRecv:
         data = bytearray(await self.recv_from(self.__client))
@@ -91,7 +90,7 @@ class HTTPSession:
             if not self.active():
                 return b"", 0
             
-        return to_bytes(data), 1
+        return bytes(data), 1
     
     async def recv_full_http(self, recv_func: Callable) -> bytes:
         data, _ = await recv_func()

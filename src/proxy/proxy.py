@@ -8,18 +8,6 @@ from typing import Tuple, Union, Dict
 from socket import socket, AF_INET, SOCK_STREAM
 from components import BlackList
 from httptools import HTTPSession
-from httptools.errors import WebServerNotRunning
-
-def sys_append_modules() -> None:
-    """
-    Appends all importent modules into sys_path.
-    :returns: None.  
-    """
-    parent = '.../...'
-    module = os.path.abspath(os.path.join(os.path.dirname(__file__), parent))
-    sys.path.append(module)
-
-sys_append_modules()
 from config import load_config
 from net.network_object.network_object import (
     ServerConnection,
@@ -73,7 +61,7 @@ class Proxy(BaseServer):
             return ServerConnection(sock, self.__target)
         
         except ConnectionRefusedError:
-            raise WebServerNotRunning(f'{self.__target} is not running.')
+            raise ConnectionRefusedError(f'{self.__target} is not running.')
     
     async def __handle_client(self, client: ClientConnection) -> None:
         web_server = await self.connect_to_webserver()
@@ -97,8 +85,6 @@ class Proxy(BaseServer):
         del self.__sessions[client]
 
 if __name__ == '__main__':
-    import stringtools
-    print(stringtools.sum_as_string(1, 3))
     webserver, proxy, admin = load_config('network.toml') 
     waf = Proxy(addr=proxy, target=webserver, admin=admin)
     asyncio.run(waf.start())
