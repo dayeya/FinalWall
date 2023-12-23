@@ -4,11 +4,9 @@ Author: Daniel Sapojnikov 2023.
 import os
 import sys
 from socket import socket
-from abc import ABC, abstractmethod
-from typing import Union, Callable, Dict
-from dataclasses import dataclass, field
-from .protocol import HTTPResponseParser as HTTPResponse
-from .functions import get_content_length, has_ending_suffix
+from typing import Callable, Dict
+from ..protocol import HTTPResponseParser as HTTPResponse
+from ..functions import get_content_length, has_ending_suffix
 
 def sys_append_modules() -> None:
     """
@@ -20,8 +18,12 @@ def sys_append_modules() -> None:
     sys.path.append(module)
 
 sys_append_modules()
-from net.aionetwork.aionetwork import safe_recv, SafeRecv
-from net.network_object.network_object import (
+from net.aionetwork import (
+    safe_recv, 
+    SafeRecv
+)
+
+from net.network_object import (
     ConnectionType,
     ServerConnection, 
     ClientConnection,
@@ -95,3 +97,4 @@ class HTTPSession:
     async def recv_full_http(self, recv_func: Callable) -> bytes:
         data, _ = await recv_func()
         return data
+    

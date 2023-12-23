@@ -12,7 +12,7 @@ def sys_append_modules() -> None:
     sys.path.append(module)
 
 sys_append_modules()
-from net.aionetwork.aionetwork import Address
+from net.aionetwork import Address
 
 class BaseServer:
     """

@@ -9,11 +9,11 @@ from socket import socket, AF_INET, SOCK_STREAM
 from components import BlackList
 from httptools import HTTPSession
 from config import load_config
-from net.network_object.network_object import (
+from net.network_object import (
     ServerConnection,
     ClientConnection,
 )
-from net.aionetwork.aionetwork import (
+from net.aionetwork import (
     Address,
     create_new_task,
     safe_send

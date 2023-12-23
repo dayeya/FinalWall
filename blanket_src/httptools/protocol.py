@@ -1,6 +1,5 @@
 """
 Author: Daniel Sapojnikov 2023.
-General HTTP objects to use.
 """
 from io import BytesIO
 from http.client import HTTPResponse
