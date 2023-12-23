@@ -1,54 +1,40 @@
-import os
-import sys
-import json
+# import os
+# import sys
+# import json
 import asyncio
+from typing import Dict
 from base import BaseServer
-from threading import Thread
-from typing import Tuple, Union, Dict
-from socket import socket, AF_INET, SOCK_STREAM
-from components import BlackList
-from httptools import HTTPSession
 from config import load_config
+from httptools import HTTPSession
+from socket import socket, AF_INET, SOCK_STREAM
+from components import (
+    BlackList, 
+    Logger,
+    PROXY_LOGGER
+)
 from net.network_object import (
     ServerConnection,
     ClientConnection,
 )
 from net.aionetwork import (
     Address,
-    create_new_task,
-    safe_send
+    safe_send,
+    create_new_task
 )
 
 class Proxy(BaseServer):
     def __init__(self, addr: Address, target: Address, admin: Address) -> None:
-        self.__target = target
-        self.__blacklist = BlackList()
-        self.__sessions: Dict[ClientConnection, HTTPSession] = {}
-        
-        # Initialize BaseServer.
         super().__init__(addr, admin)
         
+        self.__target = target
+        self.__blacklist = BlackList()
+        self.__logger = Logger(PROXY_LOGGER)
+        self.__sessions: Dict[ClientConnection, HTTPSession] = {}
+        
     async def __accept_client(self) -> ClientConnection:
-        """
-        Waits for a client.
-        :returns: ClientConnection.
-        """
         loop = asyncio.get_event_loop()
         client, addr = await loop.sock_accept(self._main_sock)
         return ClientConnection(client, addr)
-    
-    async def start(self) -> None:
-        print(f'[+] Blanket started, address: {self._addr}')
-        
-        while True:
-            client = await self.__accept_client()
-            print(f'[+] Logged a new client: {client.host_addr}')
-            
-            task: asyncio.Task = create_new_task(
-                task_name=f'{client.host_addr} Handler', 
-                task=self.__handle_client, 
-                args=(client, ))
-            await task
     
     def __add_session(self, client: ClientConnection, server: ServerConnection) -> None:
         session = HTTPSession(client, server)
@@ -83,6 +69,18 @@ class Proxy(BaseServer):
             
         current_session.close_session()
         del self.__sessions[client]
+        
+    async def start(self) -> None:
+        self.__logger.log_date(f'Blanket started, address: {self._addr}')
+        while True:
+            client = await self.__accept_client()
+            self.__logger.log_date(f'Logged a new client: {client.host_addr}')
+            
+            task: asyncio.Task = create_new_task(
+                task_name=f'{client.host_addr} Handler', 
+                task=self.__handle_client, 
+                args=(client, ))
+            await task
 
 if __name__ == '__main__':
     webserver, proxy, admin = load_config('network.toml') 
