@@ -11,12 +11,12 @@ class SqlDetectionResult:
 class SqlPayload:
     payload: str
     identifier: str
-
-    def parse(self) -> None:
-        self.payload = unquote(self.payload)
         
-    def len(self):
+    def len(self) -> int:
         return len(self.payload)
+    
+def decode_url(raw: str) -> str:
+    return unquote(raw)
     
 def with_quotes(s: SqlPayload) -> bool:
     pass

@@ -1,1 +1,1 @@
-# Main file of Blanket
+# Main file of blanket.
