@@ -15,9 +15,7 @@ sys_append_modules()
 from net.aionetwork import Address
 
 class BaseServer:
-    """
-    BaseServer defines the basic configuration of the Picky proxy.
-    """
+    """Basic TCP server setup"""
     def __init__(self, addr: Address, admin: Address) -> None:
         self._addr = addr
         self._admin = admin
