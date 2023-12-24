@@ -5,7 +5,7 @@ Blacklist Class.
 
 import toml
 from pathlib import Path
-from ..singleton import Singleton
+from ..singleton.singleton import Singleton
 
 EMPTY_BL = []
 BLACKLIST_PATH = Path(__file__).parent.joinpath('blacklist.toml')
