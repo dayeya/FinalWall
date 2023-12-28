@@ -6,6 +6,10 @@ Client Class used to define clients across the LAN.
 from typing import Tuple, Union
 from socket import socket, MSG_PEEK
 from dataclasses import dataclass
+from net.aionetwork import (
+    safe_recv, 
+    SafeRecv
+)
 
 type Address = Tuple[str, int]
 
@@ -17,37 +21,42 @@ class Connection:
     @property
     def address(self) -> Address:
         return self.host_addr
-    
+     
     def close(self) -> None:
         self.sock.close()
         
     def __hash__(self) -> int:
         return hash((self.sock, self.host_addr))
+    
+    async def recv(self) -> SafeRecv:
+        data, result = await safe_recv(self.sock, buffer_size=8192)
+        if not result: 
+            self.close()
+        return data
 
 class ClientConnection(Connection):
     def __init__(self, sock: socket, addr: Address) -> None:
         super().__init__(sock, addr)
         
     def __repr__(self) -> str:
-        return f'ClientConnection(sock={self.sock}, addr={self.host_addr})'
+        return f'ClientConnection(peer={self.sock.getpeername()}, addr={self.host_addr})'
 
 class ServerConnection(Connection):
     def __init__(self, sock: socket, addr: Address) -> None:
         super().__init__(sock, addr)
         
     def __repr__(self) -> str:
-        return f'ServerConnection(sock={self.sock}, addr={self.host_addr})'
+        return f'ServerConnection(peer={self.sock.getpeername()}, addr={self.host_addr})'
 
 type ConnectionType = Union[ClientConnection, ServerConnection]
 type NetworkObject = Union[ConnectionType, socket]
 
 def close_all(*objects: Tuple[NetworkObject]) -> None:
     for closable in objects:
-        classify = closable.__class__.__name__
         try:
             closable.close()
-            print(f'[!] A {classify} object was closed successfuly!')
         except Exception as close_error:
+            classify = closable.__class__.__name__
             print(f'[!] {classify}.close() was not complete. {close_error}')
             
 def is_closed(object: NetworkObject) -> bool:
@@ -57,7 +66,7 @@ def is_closed(object: NetworkObject) -> bool:
     except:
         return True
             
-def conn_to_str(conn_type: ConnectionType) -> str:
+def determine_conn(conn_type: ConnectionType) -> str:
     """
     Converts the ConnectionType into a string.
     :returns: ClientConnection -> "client", ServerConnection -> "server.

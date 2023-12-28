@@ -20,7 +20,8 @@ def sys_append_modules() -> None:
 sys_append_modules()
 from net.aionetwork import (
     safe_recv, 
-    SafeRecv
+    SafeRecv,
+    Address
 )
 
 from net.network_object import (
@@ -29,25 +30,25 @@ from net.network_object import (
     ClientConnection,
     close_all,
     is_closed,
-    conn_to_str
+    determine_conn
 )
 
 class HTTPSession:
-    """
-    This class defines an HTTP session that is intercepted by the Picky proxy.
-    """
-    def __init__(self, client: ClientConnection, server: ServerConnection) -> None:
-        self.__running = True
+    def __init__(self, client: ClientConnection, server: ServerConnection, proxy: Address) -> None:
         self.__client = client
         self.__server = server
-        self.__bytes_sent: Dict[str, bytes] = {'client': 0,'server': 0}
-        
+        self.__proxy = proxy
+        self.__bytes_sent = {'client': 0,'server': 0}
+    
     @property
-    def client_recv(self) -> Callable:
-        return self.__recv_from_client
+    def proxy(self) -> Address:
+        return self.__proxy
     @property
-    def server_recv(self) -> Callable:
-        return self.__recv_from_server
+    def client_seq(self) -> int:
+        return self.__bytes_sent['client']
+    @property
+    def server_seq(self) -> int:
+        return self.__bytes_sent['server']
     @property
     def client_sock(self) -> socket:
         return self.__client.sock
@@ -60,41 +61,35 @@ class HTTPSession:
     
     def active(self) -> bool:
         return is_closed(self.client_sock) or is_closed(self.server_sock)
-
-    async def recv_from(self, conn: ConnectionType) -> bytes:
-        data, result = await safe_recv(conn.sock, buffer_size=8192)
-        if not result:
-            self.close_session()
-        self.__bytes_sent[conn_to_str(conn)] += len(data)
-        return data
     
-    async def __recv_from_server(self) -> SafeRecv:
-        data = bytearray(await self.recv_from(self.__server))
+    def __update_seq(self, sender: str, seq: int) -> None:
+        self.__bytes_sent[sender] =+ seq
+    
+    async def server_recv(self) -> SafeRecv:
+        data = bytearray(await self.__server.recv())
         if not self.active():
             return b"", 0
         
         response = HTTPResponse(bytes(data))
         content_length = get_content_length(response, default=-1)
         while len(data) <= content_length:
-            data.extend(await self.recv_from(self.__server))
+            chunk = await self.__server.recv()
             if not self.active():
                 return b"", 0
+            data.extend(chunk)
+            self.__update_seq('server', len(chunk))
             
         return bytes(data), 1
     
-    async def __recv_from_client(self) -> SafeRecv:
-        data = bytearray(await self.recv_from(self.__client))
-        if not self.active(): 
-            return b"", 0
-        
+    async def client_recv(self) -> SafeRecv:
+        data = bytearray(b'')
         while not has_ending_suffix(data):
-            data.extend(await self.recv_from(self.__client))
+            chunk = await self.__client.recv()
+            print(chunk)
             if not self.active():
                 return b"", 0
-            
+            data.extend(chunk)
+            self.__update_seq('server', len(chunk))
+        
         return bytes(data), 1
-    
-    async def recv_full_http(self, recv_func: Callable) -> bytes:
-        data, _ = await recv_func()
-        return data
     

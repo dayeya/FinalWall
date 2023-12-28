@@ -37,31 +37,31 @@ class Proxy(BaseServer):
         return ClientConnection(client, addr)
     
     def __add_session(self, client: ClientConnection, server: ServerConnection) -> None:
-        session = HTTPSession(client, server)
+        session = HTTPSession(client, server, self._addr)
         self.__sessions[client] = session
     
-    async def connect_to_webserver(self) -> ServerConnection:
-        sock = socket(AF_INET, SOCK_STREAM)
+    async def __connect_to_webserver(self) -> ServerConnection:
         try:
+            sock = socket(AF_INET, SOCK_STREAM)
             sock.connect(self.__target)
             return ServerConnection(sock, self.__target)
         
         except ConnectionRefusedError:
-            raise ConnectionRefusedError(f'{self.__target} is not running.')
+            print(ConnectionRefusedError(f'{self.__target} is not running.'))
     
     async def __handle_client(self, client: ClientConnection) -> None:
-        web_server = await self.connect_to_webserver()
+        web_server = await self.__connect_to_webserver()
         self.__add_session(client, web_server)
         
         current_session = self.__sessions[client]
         server_sock = current_session.server_sock
         client_sock = current_session.client_sock
         
-        request = await current_session.recv_full_http(current_session.client_recv)
+        request, _ = await current_session.client_recv()
         await safe_send(server_sock, request)
         
         if request:
-            response = await current_session.recv_full_http(current_session.server_recv)
+            response, _ = await current_session.server_recv()
             await safe_send(client_sock, response)
         
         if not current_session.active():

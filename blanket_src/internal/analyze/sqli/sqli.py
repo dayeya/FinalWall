@@ -1,4 +1,4 @@
-from typing import Union
+# from typing import Union
 from dataclasses import dataclass
 from urllib.parse import unquote, parse_qs
 
@@ -11,7 +11,7 @@ class SqlDetectionResult:
 class SqlPayload:
     payload: str
     identifier: str
-        
+    
     def len(self) -> int:
         return len(self.payload)
     
@@ -27,4 +27,3 @@ def with_keywords(s: SqlPayload) -> bool:
 def sqli(s: SqlPayload) -> SqlDetectionResult: 
     if s.len() == 0:
         return SqlDetectionResult(True, 'Empty payload')
-    
