@@ -61,6 +61,7 @@ class Proxy(BaseServer):
         await safe_send(server_sock, request)
         
         if request:
+            print(request)
             response, _ = await current_session.server_recv()
             await safe_send(client_sock, response)
         
@@ -74,7 +75,6 @@ class Proxy(BaseServer):
         self.__logger.log_date(f'Blanket started, address: {self._addr}')
         while True:
             client = await self.__accept_client()
-            self.__logger.log_date(f'Logged a new client: {client.host_addr}')
             
             task: asyncio.Task = create_new_task(
                 task_name=f'{client.host_addr} Handler', 
