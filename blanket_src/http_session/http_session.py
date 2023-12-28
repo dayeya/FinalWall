@@ -78,18 +78,21 @@ class HTTPSession:
                 return b"", 0
             data.extend(chunk)
             self.__update_seq('server', len(chunk))
-            
+        
+        if not self.active():
+            self.close_session()
         return bytes(data), 1
     
     async def client_recv(self) -> SafeRecv:
         data = bytearray(b'')
         while not has_ending_suffix(data):
             chunk = await self.__client.recv()
-            print(chunk)
             if not self.active():
                 return b"", 0
             data.extend(chunk)
             self.__update_seq('server', len(chunk))
-        
+            
+        if not self.active():
+            self.close_session()
         return bytes(data), 1
     
