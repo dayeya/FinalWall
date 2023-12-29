@@ -1,15 +1,7 @@
-"""
-Author: Daniel Sapojnikov 2023.
-Client Class used to define clients across the LAN.
-"""
-
 from typing import Tuple, Union
 from socket import socket, MSG_PEEK
 from dataclasses import dataclass
-from net.aionetwork import (
-    safe_recv, 
-    SafeRecv
-)
+from net.aionetwork import safe_recv, SafeRecv
 
 type Address = Tuple[str, int]
 

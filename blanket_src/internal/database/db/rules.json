@@ -1,0 +1,7 @@
+[
+    {
+        "num": "1",
+        "desc": "User typed a forbidden path",
+        "patterns": ["/admin"]
+    }
+]

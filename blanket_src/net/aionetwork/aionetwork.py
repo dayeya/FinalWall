@@ -5,9 +5,8 @@ The asyncio Network module provides simple async networking capabilities.
 
 import asyncio
 from socket import socket
-from typing import Tuple, Callable, Union
 from threading import Thread
-from conversion.conversion import decode, encode
+from typing import Tuple, Callable, Union
 
 # Universal networking constants.
 null_ip = "0.0.0.0"

@@ -2,17 +2,9 @@ import os
 import sys
 import unittest
 
+module = os.path.abspath(os.path.join(os.path.dirname(__file__),  "../..."))
+sys.path.append(module)
 
-def sys_append_modules() -> None:
-    """
-    Appends all importent modules into sys_path.
-    :returns: None.
-    """
-    parent = "../.."
-    module = os.path.abspath(os.path.join(os.path.dirname(__file__), parent))
-    sys.path.append(module)
-
-sys_append_modules()
 from blanket_src.http_tools import path_segment
 
 

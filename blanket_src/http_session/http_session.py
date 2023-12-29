@@ -70,8 +70,7 @@ class HTTPSession:
         if not self.active():
             return b"", 0
         
-        response = HTTPResponse(bytes(data))
-        content_length = get_content_length(response, default=-1)
+        content_length = get_content_length(bytes(data), default=-1)
         while len(data) <= content_length:
             chunk = await self.__server.recv()
             if not self.active():
