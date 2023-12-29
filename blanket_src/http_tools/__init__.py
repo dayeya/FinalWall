@@ -1,5 +1,5 @@
 """
 Simple module for the HTTP protocol.
 """
-from .functions import get_content_length
+from .functions import *
 from .protocol import HTTPRequestParser, HTTPResponseParser

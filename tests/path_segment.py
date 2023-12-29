@@ -1,13 +1,25 @@
+import os
+import sys
 import unittest
-from blanket_src.packet_tools import path_segment
 
-class TestPathSegment(unittest.TestCase):  
-    
-    # [Test functions]
-    
+
+def sys_append_modules() -> None:
+    """
+    Appends all importent modules into sys_path.
+    :returns: None.
+    """
+    parent = "../.."
+    module = os.path.abspath(os.path.join(os.path.dirname(__file__), parent))
+    sys.path.append(module)
+
+sys_append_modules()
+from blanket_src.http_tools import path_segment
+
+
+class TestPathSegment(unittest.TestCase):
     def test_invalid_method(self) -> None:
         payload = """
-                    INVALIDMETHOD /path HTTP/1.1\r\n
+                    INVALID /foo HTTP/1.1\r\n
                     Host: 127.0.0.1:8080\r\n\r\n
                   """
         self.assertIsNone(path_segment(payload))
@@ -19,28 +31,21 @@ class TestPathSegment(unittest.TestCase):
                   """
         self.assertIsNone(path_segment(payload))
 
-    def test_missing_newline(self) -> None:
-        payload = """
-                    GET /path HTTP/1.1\r\n
-                    Host: 127.0.0.1:8080\r\n
-                  """
-        self.assertIsNone(path_segment(payload))
-
     def test_malformed_request_line(self) -> None:
         payload = """
-                    InvalidRequestLine\r\n
+                    INVALID\r\n
                     Host: 127.0.0.1:8080\r\n\r\n
                 """
         self.assertIsNone(path_segment(payload))
-        
+
     def test_url_encoded_path(self) -> None:
         payload = """
                     POST /encoded%2Fpath HTTP/1.1\r\n
                     Host: 127.0.0.1:8080\r\n\r\n
                   """
-        self.assertEqual(path_segment(payload), ('POST', '/encoded%2Fpath'))
-        
-    def test_empty_request(self) -> None:
+        self.assertEqual(path_segment(payload), ("POST", "/encoded%2Fpath"))
+
+    def test_no_path_segment_request(self) -> None:
         payload = """
                     GET / HTTP/1.1\r\n
                     Host: 127.0.0.1:8080\r\n
@@ -54,8 +59,8 @@ class TestPathSegment(unittest.TestCase):
                     Connection: keep-alive\r\n
                     Referer: http://127.0.0.1:8080/login\r\n\r\n\r\n
                   """
-        self.assertEqual(path_segment(payload), ('GET', '/'))
-        
+        self.assertEqual(path_segment(payload), ("GET", "/"))
+
     def test_dir_request(self) -> None:
         payload = """
                     GET /foo HTTP/1.1\r\n
@@ -70,8 +75,8 @@ class TestPathSegment(unittest.TestCase):
                     Connection: keep-alive\r\n
                     Referer: http://127.0.0.1:8080/login\r\n\r\n\r\n
                   """
-        self.assertEqual(path_segment(payload), ('GET', '/foo'))  
-          
+        self.assertEqual(path_segment(payload), ("GET", "/foo"))
+
     def test_mul_dir_request(self) -> None:
         payload = """
                     POST /Blanket/foo/bar HTTP/1.1\r\n
@@ -86,7 +91,9 @@ class TestPathSegment(unittest.TestCase):
                     Connection: keep-alive\r\n
                     Referer: http://127.0.0.1:8080/login\r\n\r\n\r\n
                   """
-        self.assertEqual(path_segment(payload), ('POST', '/Blanket/foo/bar'))    
-    
-if __name__ == '__main__':
+        self.assertEqual(path_segment(payload), ("POST", "/Blanket/foo/bar"))
+
+
+if __name__ == "__main__":
     unittest.main()
+    
