@@ -3,7 +3,6 @@ Author: Daniel Sapojnikov 2023.
 """
 from io import BytesIO
 from http.client import HTTPResponse
-from http.server import BaseHTTPRequestHandler
 
 class BytesSocket:
     def __init__(self, payload_bytes: bytes) -> None:
@@ -15,14 +14,6 @@ class BytesSocket:
         :returns: the underlying BytesIO object.
         """
         return self._file
-
-class HTTPRequestParser(BaseHTTPRequestHandler):
-    def __init__(self, raw_packet: bytes) -> None:
-        self._chunk = raw_packet
-        self.__bytes_file = BytesSocket(self._chunk)
-
-        super().__init__(self.__bytes_file)
-        self.parse_request()
         
 class HTTPResponseParser(HTTPResponse):
     """

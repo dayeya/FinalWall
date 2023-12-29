@@ -2,11 +2,21 @@
 Author: Daniel Sapojnikov 2023.
 http functions module.
 """
+import os
 import re
+import sys
+from .protocol import *
 from typing import Tuple, Optional
-from .protocol import HTTPResponseParser
 
-def path_segment(payload: str) -> Tuple[Optional[str]]:
+parent = "../."
+module = os.path.abspath(os.path.join(os.path.dirname(__file__), parent))
+sys.path.append(module)
+
+from conversion import decode
+
+type OptionalPathSegment = Tuple[Optional[str]]
+
+def path_segment(payload: str) -> OptionalPathSegment:
     for header in payload.split('\r\n'):
         match = re.search(r'\b(GET|POST|PUT|DELETE)\s+(/\S*)', header)
         if match:
@@ -21,7 +31,18 @@ def get_content_length(packet: bytes, default: int=-1) -> int:
     return int(content_length)
 
 def get_agent(packet: bytes) -> str:
-    packet = HTTPResponseParser(packet)
-    return packet.getheader('User-Agent', default='Unknown Agent')
-
-__all__ = ["path_segment", "has_ending_suffix", "get_content_length", "get_agent"]
+    try:
+        packet: str = decode(packet)
+        for header in packet.split('\r\n'):
+            idx = header.find('User-Agent')
+            if idx >= 0:
+                return header[idx:]
+    except:
+        return None
+            
+__all__ = [
+    "path_segment", 
+    "has_ending_suffix", 
+    "get_content_length", 
+    "get_agent"
+]
