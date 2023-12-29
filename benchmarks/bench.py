@@ -9,21 +9,6 @@ sys.path.append(module)
 # Import all functions to benchmark.
 from blanket_src.http_tools.functions import *
 
-"""
------------------------------------
-Performence benchmark: Path Segment
-Ran 1000 iterations in 0.0014919s
-Avg time for one iteration on bench_path_segment - 0ms
--------------------------------------
-Performence benchmark: Content-Length
-Ran 1000 iterations in 0.0678246s
-Avg time for one iteration on bench_get_content_length - 34ms
----------------------------------
-Performence benchmark: User-Agent
-Ran 1000 iterations in 0.0011952s
-Avg time for one iteration on bench_get_agent - 0ms
-"""
-
 @benchmark_time("Path Segment", 1000)
 def bench_path_segment() -> None:
     _ = path_segment("GET /foo/bar HTTP/1.0\r\nUser-Agent: Wget/1.12 (linux-gnu)\r\nAccept: */*\r\nHost: packetlife.net\r\nConnection: Keep-Alive\r\n\r\n")
