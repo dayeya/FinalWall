@@ -9,9 +9,12 @@ from components import BlackList, Logger, PROXY_LOGGER
 from net.network_object import (
     ServerConnection,
     ClientConnection
-)
-from net.aionetwork import Address, safe_send, create_new_task
 
+)
+from internal.gentoken import tokenize 
+from actions.block import build_page, build_styles
+from net.aionetwork import Address, safe_send, create_new_task
+from internal.analyze.access import contains_forbidden_words
 
 class Proxy(BaseServer):
     def __init__(self, addr: Address, target: Address, admin: Address) -> None:
@@ -38,7 +41,7 @@ class Proxy(BaseServer):
             return ServerConnection(sock, self.__target)
 
         except ConnectionRefusedError:
-            print(ConnectionRefusedError(f"{self.__target} is not running."))
+            self.__logger.log(ConnectionRefusedError(f"{self.__target} is not running."))
 
     async def __handle_client(self, client: ClientConnection) -> None:
         web_server = await self.__connect_to_webserver()
@@ -48,16 +51,19 @@ class Proxy(BaseServer):
         server_sock = current_session.server_sock
         client_sock = current_session.client_sock
 
-        request, _ = await current_session.client_recv()
+        request, _err = await current_session.client_recv()
         await safe_send(server_sock, request)
 
         if request:
-            
-            # Check for forbidden words. 
-            # if (contains_forbidden_words(request)):
-            
-            response, _ = await current_session.server_recv()
-            await safe_send(client_sock, response)
+            # Check for rule bypassing.
+            if (contains_forbidden_words(request)):
+                token = tokenize()
+                block_response, styles = build_page(token), build_styles()
+                await safe_send(client_sock, block_response)
+                await safe_send(client_sock, styles)
+            else:      
+                response, _err = await current_session.server_recv()
+                await safe_send(client_sock, response)
 
         if not current_session.active():
             return

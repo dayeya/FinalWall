@@ -25,12 +25,10 @@ from net.aionetwork import (
 )
 
 from net.network_object import (
-    ConnectionType,
     ServerConnection, 
     ClientConnection,
     close_all,
-    is_closed,
-    determine_conn
+    is_closed
 )
 
 class HTTPSession:

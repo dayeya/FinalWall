@@ -4,9 +4,8 @@ import sys
 
 DIR = os.path.dirname(__file__)
 ROOT_DIR = os.path.join(DIR, "../..")
-blanket = os.path.abspath(ROOT_DIR)
-sys.path.append(blanket)
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../...")))
+sys.path.append(os.path.abspath(ROOT_DIR))
+sys.path.append(os.path.abspath(os.path.join(DIR, "../...")))
 
 from database import db
 from http_tools import path_segment
@@ -25,9 +24,9 @@ def check_forbidden_path(path: str) -> bool:
                 return True
     return False
 
-def deny_access(packet: bytes) -> bool:
-    """Determines if the package contains forbidden paths."""
-    _, path = path_segment(str(packet))
+def contains_forbidden_words(packet: bytes) -> bool:
+    """Determines if the packet contains forbidden paths."""
+    _method, path = path_segment(str(packet))
     if check_forbidden_path(path):
         return True
     return False
