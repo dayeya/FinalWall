@@ -4,17 +4,18 @@ from base import BaseServer
 from config import load_config
 from http_session import HTTPSession
 from socket import socket, AF_INET, SOCK_STREAM
-
 from components import BlackList, Logger, PROXY_LOGGER
+from net.aionetwork import create_new_task, Address
+
 from net.network_object import (
     ServerConnection,
     ClientConnection
 
 )
+from conversion import encode
 from internal.gentoken import tokenize 
-from actions.block import build_page, build_styles
-from net.aionetwork import Address, safe_send, create_new_task
-from internal.analyze.access import contains_forbidden_words
+from internal.analyze.access import contains_forbidden_paths
+from actions.block import build_block, build_redirect, has_block
 
 class Proxy(BaseServer):
     def __init__(self, addr: Address, target: Address, admin: Address) -> None:
@@ -22,7 +23,7 @@ class Proxy(BaseServer):
 
         self.__target = target
         self.__blacklist = BlackList()
-        self.__logger = Logger(PROXY_LOGGER)
+        self.logger = Logger(PROXY_LOGGER)
         self.__sessions: Dict[ClientConnection, HTTPSession] = {}
 
     async def __accept_client(self) -> ClientConnection:
@@ -41,48 +42,50 @@ class Proxy(BaseServer):
             return ServerConnection(sock, self.__target)
 
         except ConnectionRefusedError:
-            self.__logger.log(ConnectionRefusedError(f"{self.__target} is not running."))
+            self.logger.error(f"{self.__target} is not running.")
 
-    async def __handle_client(self, client: ClientConnection) -> None:
-        web_server = await self.__connect_to_webserver()
-        self.__add_session(client, web_server)
+    async def __handle_connection(self, client: ClientConnection) -> None:
+        """
+        Simple function to handle single TCP connection.
+        """
+        blocked = False
+        http_session = HTTPSession(client, await self.__connect_to_webserver(), self._addr)
+        request, err = await http_session.client_recv()
+        if err:
+            self.logger.error(f"Could not recv any data from client: {http_session.client_addr}")
+        
+        # Check for malicious input.
+        if contains_forbidden_paths(request):
+            token = tokenize()
+            location = encode("/block?token=" + token)
+            redirection = build_redirect(location)
+            print(redirection)
+            await http_session.send_to_client(redirection)
 
-        current_session = self.__sessions[client]
-        server_sock = current_session.server_sock
-        client_sock = current_session.client_sock
-
-        request, _err = await current_session.client_recv()
-        await safe_send(server_sock, request)
-
-        if request:
-            # Check for rule bypassing.
-            if (contains_forbidden_words(request)):
-                token = tokenize()
-                block_response, styles = build_page(token), build_styles()
-                await safe_send(client_sock, block_response)
-                await safe_send(client_sock, styles)
-            else:      
-                response, _err = await current_session.server_recv()
-                await safe_send(client_sock, response)
-
-        if not current_session.active():
-            return
-
-        current_session.close_session()
-        del self.__sessions[client]
+        # GET for security page.
+        if token := has_block(request):
+            blocked = True
+            print(token)
+            block_html = build_block(token)
+            await http_session.send_to_client(block_html)
+        
+        # Valid input.
+        if not blocked:
+            await http_session.send_to_server(request)
+            response, err = await http_session.server_recv()
+            if err:
+                self.logger.error(f"Could not recv any data from server: {http_session.server_addr}")
+            await http_session.send_to_client(response)
 
     async def start(self) -> None:
-        self.__logger.log_date(f"Blanket started, address: {self._addr}")
         while True:
             client = await self.__accept_client()
-
-            task: asyncio.Task = create_new_task(
+            task = create_new_task(
                 task_name=f"{client.host_addr} Handler",
-                task=self.__handle_client,
+                task=self.__handle_connection,
                 args=(client,),
             )
             await task
-
 
 if __name__ == "__main__":
     webserver, proxy, admin = load_config("network.toml")

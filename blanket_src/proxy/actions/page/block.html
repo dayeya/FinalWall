@@ -5,14 +5,54 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="./main.css">
+    <style>
+        :root { 
+            --main-color: #0c0e10;
+            --sec-color: #ffffff;
+        
+            /* Fonts. */
+            --ff-size: 1.2em;
+            --ff-main-font: 'Arial';
+        }
+        
+        *,
+        *::after,
+        *::before {
+            box-sizing: border-box;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        
+        .container {
+            width: 100vw;
+            height: 100vh;
+            background: var(--main-color);
+        
+            display: flex;
+            align-items: center;
+            overflow-y: hidden;
+            overflow-x: hidden;
+        
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .container > h1 {
+            color: var(--sec-color);
+            font-size: var(--ff-size);
+            font-family: var(--ff-main-font);
+        }
+    </style> 
 </head>
 
 <body>
     <div class="container">
        <h1>
-        You are blocked by Blanket WAF.<br>
-        Action token: bn3xqsv2  
+        You are blocked by Blanket<br>
+        Action token: {{ token }}  
        </h1>
     </div>
 </body>

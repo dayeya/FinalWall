@@ -4,25 +4,11 @@ Author: Daniel Sapojnikov 2023.
 import os
 import sys
 from socket import socket
-from typing import Callable, Dict
 from http_tools.functions import *
-from http_tools.protocol import HTTPResponseParser as HTTPResponse
 
-def sys_append_modules() -> None:
-    """
-    Appends all importent modules into sys_path.
-    :returns: None.  
-    """
-    parent = '.../...'
-    module = os.path.abspath(os.path.join(os.path.dirname(__file__), parent))
-    sys.path.append(module)
-
-sys_append_modules()
-from net.aionetwork import (
-    safe_recv, 
-    SafeRecv,
-    Address
-)
+parent = '.../...'
+module = os.path.abspath(os.path.join(os.path.dirname(__file__), parent))
+sys.path.append(module)
 
 from net.network_object import (
     ServerConnection, 
@@ -30,7 +16,7 @@ from net.network_object import (
     close_all,
     is_closed
 )
-
+from net.aionetwork import safe_send, SafeRecv, Address
 class HTTPSession:
     def __init__(self, client: ClientConnection, server: ServerConnection, proxy: Address) -> None:
         self.__client = client
@@ -53,6 +39,12 @@ class HTTPSession:
     @property
     def server_sock(self) -> socket:
         return self.__server.sock
+    @property
+    def client_addr(self) -> socket:
+        return self.__client.address
+    @property
+    def server_addr(self) -> socket:
+        return self.__server.address
     
     def close_session(self) -> None:
         close_all(self.__client, self.__server)
@@ -72,24 +64,34 @@ class HTTPSession:
         while len(data) <= content_length:
             chunk = await self.__server.recv()
             if not self.active():
-                return b"", 0
+                return b"", 1
             data.extend(chunk)
             self.__update_seq('server', len(chunk))
         
         if not self.active():
             self.close_session()
-        return bytes(data), 1
+        return bytes(data), 0
     
     async def client_recv(self) -> SafeRecv:
         data = bytearray(b'')
         while not has_ending_suffix(data):
             chunk = await self.__client.recv()
             if not self.active():
-                return b"", 0
+                return b"", 1
             data.extend(chunk)
             self.__update_seq('server', len(chunk))
             
         if not self.active():
             self.close_session()
-        return bytes(data), 1
+        return bytes(data), 0
+    
+    async def send_to_client(self, payload: bytes) -> None:
+        if not self.active():
+            self.close_session()
+        await safe_send(self.client_sock, payload)
+        
+    async def send_to_server(self, payload: bytes) -> None:
+        if not self.active():
+            self.close_session()
+        await safe_send(self.server_sock, payload)
     

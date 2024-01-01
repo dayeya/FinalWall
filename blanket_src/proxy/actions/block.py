@@ -1,11 +1,14 @@
-# Simple file that defines the behavior of a BLOCK.
+#Simple file that defines the behavior of a BLOCK.
 
+import re
 from pathlib import Path
-from jinja2 import Environment
+from conversion import encode, decode
+from jinja2 import Environment, FileSystemLoader
 
 BASE_FILE = __file__
 HTML_FILE = "block.html"
 STYLES_FILE = "main.css"
+BLOCK_REGEX = re.compile(r"GET /block[?]token=([a-z0-9]{8})")
 ENV = Environment()
 
 def abs_component_path(location: str) -> str:
@@ -19,33 +22,34 @@ def abs_html_path() -> str:
 def abs_css_path() -> str:
     return abs_component_path(STYLES_FILE)
 
-def push_args_into_template(*args, **kwargs) -> str:
+def push_args_into_template(*args, **kwargs) -> bytes:
     html_file = abs_html_path()
     with open(html_file, 'r') as h:
         html = h.read()
     block_template = ENV.from_string(html)
-    
-    # Update the HTML file.
-    with open(html_file, "w", encoding="utf-8") as block:
-        block.write(block_template.render(*args, **kwargs))
-        
+    return encode(block_template.render(*args, **kwargs))
+
 def push_styles() -> None:
     with open(abs_css_path(), "rb") as s:
         return s.read()
 
-def build_page(token: str) -> None:
-    """Builds the block page with custom arguments."""
-    
-    block_html = b"HTTP/1.1 403 Forbidden\r\n"
-    block_html += b"Content-Type: text/html; charset=utf-8\r\n\r\n"
-    push_args_into_template(token=token)
-    
-    with open(abs_html_path(), "rb") as block:
-        block_html += block.read()
-    return block_html
+def build_redirect(location: bytes) -> bytes:
+    redirect = b"HTTP/1.1 301 Moved Permenantly\r\n"
+    redirect += b"Location: " + location + b"\r\n\r\n"
+    return redirect
 
-def build_styles() -> None:
-    block_styles = b"HTTP/1.1 200 \r\n"
-    block_styles += b"Content-Type: text/css\r\n\r\n"
-    block_styles += push_styles()
-    return block_styles
+def has_block(packet: bytes) -> str | None:
+    packet = decode(packet)
+    fline = packet.split("\r\n")[0]
+    valid_block = re.match(BLOCK_REGEX, fline)
+    if valid_block: 
+        return valid_block.group(1)
+
+def build_block(token: str) -> bytes:
+    """Builds the block page with custom arguments."""
+
+    block_html = b"HTTP/1.1 200 OK\r\n"
+    block_html += b"Content-Type: text/html; charset=utf-8\r\n\r\n"
+    block_html += push_args_into_template(token=token)
+    
+    return block_html

@@ -22,7 +22,7 @@ class Connection:
 
     async def recv(self) -> SafeRecv:
         data, err = await safe_recv(self.sock, buffer_size=8192)
-        if not err:
+        if err:
             self.close()
         return data
 

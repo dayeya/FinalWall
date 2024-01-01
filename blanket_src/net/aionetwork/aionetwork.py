@@ -38,7 +38,7 @@ async def safe_recv(sock: socket, buffer_size: int) -> SafeRecv:
         try:
             data = await loop.sock_recv(sock, buffer)
         except asyncio.IncompleteReadError:
-            return b"", 0
+            return b"", 1
             
         if len(data) == buffer:
             while True:
@@ -46,7 +46,7 @@ async def safe_recv(sock: socket, buffer_size: int) -> SafeRecv:
                     data += await loop.sock_recv(sock, buffer)
                 except asyncio.IncompleteReadError:
                     break
-        return data, 1
+        return data, 0
 
     loop = asyncio.get_event_loop()
     return await __safe_socket_operation(recv_wrapper, sock, loop, buffer_size)

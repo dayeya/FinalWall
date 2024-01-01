@@ -25,6 +25,8 @@ class BaseServer:
         
         self._main_sock.listen()
         self._main_sock.setblocking(False)
+        
+        print(f"Blanket started listening, {self._addr}")
     
     def __create_socks(self) -> None:
         self._main_sock  = socket(AF_INET, SOCK_STREAM)
