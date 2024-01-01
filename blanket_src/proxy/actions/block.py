@@ -6,32 +6,22 @@ from conversion import encode, decode
 from jinja2 import Environment, FileSystemLoader
 
 BASE_FILE = __file__
-HTML_FILE = "block.html"
+HTML_FILE = "security_page.html"
 STYLES_FILE = "main.css"
 BLOCK_REGEX = re.compile(r"GET /block[?]token=([a-z0-9]{8})")
 ENV = Environment()
 
 def abs_component_path(location: str) -> str:
-    parent = Path(BASE_FILE).parent.joinpath('page')
+    parent = Path(BASE_FILE).parent.joinpath('security_page')
     location  = str(parent.joinpath(location))
     return location
 
-def abs_html_path() -> str:
-    return abs_component_path(HTML_FILE)
-
-def abs_css_path() -> str:
-    return abs_component_path(STYLES_FILE)
-
 def push_args_into_template(*args, **kwargs) -> bytes:
-    html_file = abs_html_path()
+    html_file = abs_component_path(HTML_FILE)
     with open(html_file, 'r') as h:
         html = h.read()
     block_template = ENV.from_string(html)
     return encode(block_template.render(*args, **kwargs))
-
-def push_styles() -> None:
-    with open(abs_css_path(), "rb") as s:
-        return s.read()
 
 def build_redirect(location: bytes) -> bytes:
     redirect = b"HTTP/1.1 301 Moved Permenantly\r\n"
@@ -46,10 +36,7 @@ def has_block(packet: bytes) -> str | None:
         return valid_block.group(1)
 
 def build_block(token: str) -> bytes:
-    """Builds the block page with custom arguments."""
-
     block_html = b"HTTP/1.1 200 OK\r\n"
     block_html += b"Content-Type: text/html; charset=utf-8\r\n\r\n"
     block_html += push_args_into_template(token=token)
-    
     return block_html
