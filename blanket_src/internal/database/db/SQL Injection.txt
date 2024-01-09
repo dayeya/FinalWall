@@ -1,0 +1,88 @@
+**between words: can be Space, TAB(s), +, /*, CRLF   -> 
+**spaces between words can be encode with URL Decoder (e.g. %0d%0a is CRLF, %09 is TAB)
+**the whole words can be encode with URI Encode 
+**  partial word can be encode with URI Encode (%53eLEct is SeLEct)
+**case insensetive
+**
+	
+
+***GENERAL *** Logic: search one word
+SUBSTR(
+SUBSTRING(
+--comment
+/*comment*/
+#comment
+WAITFOR DELAY
+exec 
+copy (SELECT
+LOAD_FILE
+SELECT extractvalue
+declare 
+SLEEP(
+Request.
+((((
+/**
+--
+or 1
+1 AND 1
+*/AND/*
+AND 1=1
+DROP TABLE
+DROP DATABASE
+EXEC xp_
+
+***SELECT*** Logic: two or more words
+
+SELECT 
+FROM 
+WHERE 
+LIKE 
+SLEEP
+SLEEPTIME
+THEN (SELECT
+SELECT COUNT
+SELECT banner
+SELECT version
+SELECT CASE
+SELECT IF
+SELECT pg_sleep(
+SELECT sleep(10)
+((select
+SLEEP(
+CREATE FUNCTION
+REPLACE FUNCTION
+WAITFOR DELAY
+DECLARE
+BEGIN IF
+NULL
+CALL
+AND
+INFERENCE
+RANDNUM
+RANDSTR
+banner 
+version 
+version()
+@@version
+*
+table_name
+information_schema
+nslookup
+declare 
+LIKE
+table
+AND if
+UNION
+Query(
+concat(
+distinct
+AND
+BETWEEN
+
+***INSERT****Logic: two or more words
+INSERT INTO
+VALUES 
+
+***UPDATE***Logic: two or more words
+UPDATE
+where

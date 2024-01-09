@@ -1,0 +1,38 @@
+Inside parameter value
+
+http://ip:8080/page.php?parameter=<script>
+
+<img src
+<img on
+script
+<script>
+<script
+<script>alert(
+alert(
+onerror
+</script>
+meta http-equiv
+url=data
+javascript
+'xss'
+eval
+onstart=
+<?php include
+data:text/javascript
+<input
+<link
+<video>
+<audio>
+<object
+<iframe
+<embed
+javascript:
+;windows(
+;self(
+;this(
+;top(
+;parent(
+;frames(
+;globalThis
+[+!![]]
+;//
