@@ -24,7 +24,7 @@ def push_args_into_template(*args, **kwargs) -> bytes:
     return encode(block_template.render(*args, **kwargs))
 
 def build_redirect(location: bytes) -> bytes:
-    redirect = b"HTTP/1.1 301 Moved Permenantly\r\n"
+    redirect = b"HTTP/1.1 302 Found\r\n"
     redirect += b"Location: " + location + b"\r\n\r\n"
     return redirect
 

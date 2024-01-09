@@ -5,13 +5,17 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
     <style>
         :root { 
             --main-color: #0c0e10;
             --sec-color: #ffffff;
+            --spany: #9fc580;
         
             /* Fonts. */
             --ff-size: 1.2em;
+            --ff-header-size: 2.2em;
             --ff-main-font: 'Arial';
         }
         
@@ -26,7 +30,7 @@
             padding: 0;
         }
         
-        .container {
+        .con {
             width: 100vw;
             height: 100vh;
             background: var(--main-color);
@@ -37,23 +41,65 @@
             overflow-x: hidden;
         
             flex-direction: column;
-            justify-content: center;
         }
         
-        .container > h1 {
+        .header {
+            width: fit-content;
+            display: inline-block;
+            position: relative;
+         
+            margin: 0;
+            color: var(--sec-color);
+            font-size: var(--ff-header-size);
+            font-family: var(--ff-main-font);
+            margin-top: 75px;
+            margin-bottom: 50px;
+        }
+        
+        .header::after {
+            content: "";
+            width: 100%;
+            height: .045em;
+        
+            background: var(--sec-color);
+            position: absolute;
+            left: 0;
+            margin-top: 15px;
+            border-radius: 1px;
+        }
+        
+        .par {
+            width: 85ch;
             color: var(--sec-color);
             font-size: var(--ff-size);
             font-family: var(--ff-main-font);
         }
+        
+        .spany {
+            color: var(--spany);
+            font-weight: bold;
+            font-family: var(--ff-main-font);
+            font-style: italic;
+        }
+        
+        .spany > a, .spany > a:hover, .spany > a:focus, .spany > a:active {
+            text-decoration: none;
+            color: inherit;
+        }
     </style> 
 </head>
-
 <body>
-    <div class="container">
-       <h1>
-        You are blocked by Blanket<br>
-        Action token: {{ token }}  
-       </h1>
+    <div class="con">
+        <h1 class="header">
+            Wrongful behavior detected.<br>  
+        </h1>
+
+        <p class="par"><br>
+            <span class="spany">Why?</span> you may have broken our policies...<br>
+            Your activiy log was sent to our administration team and is investigated.<br>
+            If you believe your activity was legitimate, please contact us via the <span class="spany"><a>contact</a></span> page with the provided token.<br><br>
+            Activity token: { token }
+        </p>
     </div>
 </body>
 </html>
