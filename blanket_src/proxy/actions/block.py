@@ -2,18 +2,17 @@
 
 import re
 from pathlib import Path
+from jinja2 import Environment
 from conversion import encode, decode
-from jinja2 import Environment, FileSystemLoader
 
 BASE_FILE = __file__
 HTML_FILE = "security_page.html"
-STYLES_FILE = "main.css"
 BLOCK_REGEX = re.compile(r"GET /block[?]token=([a-z0-9]{8})")
 ENV = Environment()
 
 def abs_component_path(location: str) -> str:
     parent = Path(BASE_FILE).parent.joinpath('security_page')
-    location  = str(parent.joinpath(location))
+    location = str(parent.joinpath(location))
     return location
 
 def push_args_into_template(*args, **kwargs) -> bytes:

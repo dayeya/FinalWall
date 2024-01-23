@@ -8,7 +8,7 @@ sys.path.append(module)
 
 # Import all functions to benchmark.
 from blanket_src.http_tools.functions import *
-from blanket_src.internal.analyze.access import deny_access
+from blanket_src.internal.analyze.access import contains_forbidden_paths
 
 @benchmark_time("Path Segment", 1000)
 def bench_path_segment() -> None:
@@ -24,7 +24,7 @@ def bench_get_agent() -> None:
 
 @benchmark_time("Deny Access", 1000)
 def bench_deny_access() -> None:
-    _ = deny_access("GET /admin HTTP/1.0\r\nUser-Agent: Mozilla\r\nAccept: */*\r\nHost: 127.0.0.1\r\nConnection: Keep-Alive\r\n\r\n")
+    _ = contains_forbidden_paths("GET /admin HTTP/1.0\r\nUser-Agent: Mozilla\r\nAccept: */*\r\nHost: 127.0.0.1\r\nConnection: Keep-Alive\r\n\r\n")
 
 if __name__ == '__main__':
     bench_path_segment()
