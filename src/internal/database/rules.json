@@ -1,0 +1,7 @@
+{
+    "raw": [
+        "R101;Detected an SQL keyword", 
+        "R102;Detected an XSS payload", 
+        "R103;Detected a request for a forbidden location"
+    ]
+}

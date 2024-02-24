@@ -3,6 +3,7 @@
 
 # Reference: https://gist.github.com/sckalath/78ad449346171d29241a
 
+/admin
 /apache/logs/access.log
 /apache/logs/error.log
 /bin/php.ini
@@ -192,7 +193,7 @@
 /var/log/mysqld.log
 /var/www/index.php
 
-# Reference: https://github.com/sqlmapproject/sqlmap/blob/master/lib/core/settings.py#L809-L810
+# Reference: https://github.com/sqlmapproject/sqlmap/blob/master/lib/core/settings.py# 809-L810
 
 /var/www/index.php
 /usr/local/apache/index.php
