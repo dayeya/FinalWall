@@ -24,11 +24,9 @@ class RequestChecker(metaclass=Singleton):
         return contains_block(request)
     
     def __check_forbidden_location(self, request: bytes) -> bool:
-        # TODO: Handle packets withouts locations?
         _method, requested_location = path_segment(str(request))
         common = self.locations.intersection({requested_location})
-        print("Found:", common)
-        return bool(common)
+        return requested_location in self.locations
         
     def __check_sql(self) -> None: 
         pass

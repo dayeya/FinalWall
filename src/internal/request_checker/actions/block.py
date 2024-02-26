@@ -19,8 +19,7 @@ def _create_environment() -> Environment:
         templates_path = _templates_path()
         templates_loader = FileSystemLoader(templates_path)
         env = Environment(loader=templates_loader)
-        listed = env.list_templates()
-        print(listed)
+        _ = env.list_templates()
         return env
     except Exception as e:
         print("Unable to create environment due:", e)
@@ -36,10 +35,12 @@ def _push_args_into_template(activity_token: str) -> bytes:
     return parsed_template.encode("utf-8")
 
 def build_block(token: str) -> bytes:
+    security_page: bytes = _push_args_into_template(token)
     block_html = b"HTTP/1.1 200 OK\r\n"
-    block_html += b"Content-Type: text/html; charset=utf-8\r\n\r\n"
-    block_html += _push_args_into_template(token)
-    print(block_html)
+    block_html += b"Content-Type: text/html; charset=utf-8\r\n"
+    block_html += b"Content-Length: " + encode(str(len(security_page))) + b"\r\n"
+    block_html += b"Connection: close\r\n\r\n"
+    block_html += security_page
     return block_html
 
 def build_redirect(location: bytes) -> bytes:
@@ -47,9 +48,12 @@ def build_redirect(location: bytes) -> bytes:
     redirect += b"Location: " + location + b"\r\n\r\n"
     return redirect
 
-def contains_block(packet: bytes) -> str | None:
-    packet = decode(packet)
-    fline = packet.split("\r\n")[0]
+def contains_block(request: bytes) -> str | None:
+    request = decode(request)
+    fline = request.split("\r\n")[0]
     valid_block = re.match(BLOCK_REGEX, fline)
     if valid_block: 
         return valid_block.group(1)
+    
+    
+    

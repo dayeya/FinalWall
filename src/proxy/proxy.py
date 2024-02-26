@@ -25,10 +25,6 @@ class Proxy(BaseServer):
         client, addr = await loop.sock_accept(self._main_sock)
         return ClientConnection(client, addr)
 
-    def __add_session(self, client: ClientConnection, server: ServerConnection) -> None:
-        session = HTTPSession(client, server, self._addr)
-        self.sessions[client] = session
-
     async def __connect_to_webserver(self) -> ServerConnection:
         try:
             sock = socket(AF_INET, SOCK_STREAM)
