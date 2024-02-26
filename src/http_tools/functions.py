@@ -39,10 +39,21 @@ def get_agent(packet: bytes) -> str:
                 return header[idx:]
     except:
         return None
+    
+def get_host(packet: bytes) -> str:
+    try:
+        packet: str = decode(packet)
+        for header in packet.split('\r\n'):
+            idx = header.find('Host:')
+            if idx >= 0:
+                return header[idx:]
+    except:
+        return None
             
 __all__ = [
     "path_segment", 
     "has_ending_suffix", 
     "get_content_length", 
-    "get_agent"
+    "get_agent",
+    "get_host"
 ]

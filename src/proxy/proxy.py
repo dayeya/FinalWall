@@ -25,7 +25,7 @@ class Proxy(BaseServer):
         client, addr = await loop.sock_accept(self._main_sock)
         return ClientConnection(client, addr)
 
-    async def __connect_to_webserver(self) -> ServerConnection:
+    async def __init_server_connection(self) -> ServerConnection:
         try:
             sock = socket(AF_INET, SOCK_STREAM)
             sock.connect(self.__target)
@@ -35,7 +35,7 @@ class Proxy(BaseServer):
             self.logger.error(f"{self.__target} is not running.")
 
     async def __handle_connection(self, client: ClientConnection) -> None:
-        http_session = HTTPSession(client, await self.__connect_to_webserver(), self._addr)
+        http_session = HTTPSession(client, await self.__init_server_connection(), self._addr)
         request, err = await http_session.client_recv()
         if err:
             self.logger.error(f"Could not recv any data from client: {http_session.client_addr}")
@@ -54,7 +54,6 @@ class Proxy(BaseServer):
         
         # Valid input.
         else:
-            print(request)
             await http_session.send_to_server(request)
             response, err = await http_session.server_recv()
             if err:
