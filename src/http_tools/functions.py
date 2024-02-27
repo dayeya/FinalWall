@@ -5,7 +5,6 @@ http functions module.
 import os
 import re
 import sys
-from .protocol import *
 from typing import Tuple, Optional
 
 parent = "../."
@@ -14,46 +13,31 @@ sys.path.append(module)
 
 from conversion import decode
 
-type OptionalPathSegment = Tuple[Optional[str]]
+class SearchContext:
+    CONTENT_LENGTH = "Content-Length:" 
+    USER_AGENT = "User-Agent:" 
+    HOST = "Host:" 
+    
+CR = "\r"
+LF = "\n"
+CRLF = "\r\n"
+BODY_SEPERATOR = "\r\n\r\n"
 
-def path_segment(payload: str) -> OptionalPathSegment:
+def path_segment(payload: str) -> str:
     for header in payload.split('\r\n'):
         match = re.search(r'\b(GET|POST|PUT|DELETE)\s+(/\S*)', header)
         if match:
             return match.groups()
 
-def has_ending_suffix(packet: bytes) -> bool:
-    return b'\r\n\r\n' in packet
+def contains_body_seperator(request: bytes) -> bool:
+    return BODY_SEPERATOR in request
 
-def get_content_length(packet: bytes, default: int=-1) -> int:
-    packet = HTTPResponseParser(packet)
-    content_length = packet.getheader('Content-Length', default)
-    return int(content_length)
-
-def get_agent(packet: bytes) -> str:
+def search_header(request: bytes, context: SearchContext) -> bytes:
     try:
-        packet: str = decode(packet)
-        for header in packet.split('\r\n'):
-            idx = header.find('User-Agent')
-            if idx >= 0:
-                return header[idx:]
-    except:
-        return None
-    
-def get_host(packet: bytes) -> str:
-    try:
-        packet: str = decode(packet)
-        for header in packet.split('\r\n'):
-            idx = header.find('Host:')
-            if idx >= 0:
-                return header[idx:]
-    except:
-        return None
+        request = decode(request)
+        for line in request.split(CRLF):
+            if idx := line.find(context) >= 0:
+                return line[idx:]
             
-__all__ = [
-    "path_segment", 
-    "has_ending_suffix", 
-    "get_content_length", 
-    "get_agent",
-    "get_host"
-]
+    except Exception as e:
+        raise e

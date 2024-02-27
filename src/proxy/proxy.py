@@ -30,7 +30,6 @@ class Proxy(BaseServer):
             sock = socket(AF_INET, SOCK_STREAM)
             sock.connect(self.__target)
             return ServerConnection(sock, self.__target)
-
         except ConnectionRefusedError:
             self.logger.error(f"{self.__target} is not running.")
 

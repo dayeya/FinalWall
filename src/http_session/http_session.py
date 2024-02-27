@@ -4,7 +4,7 @@ Author: Daniel Sapojnikov 2023.
 import os
 import sys
 from socket import socket
-from http_tools.functions import *
+from http_tools.functions import SearchContext, search_header, contains_body_seperator
 
 parent = '.../...'
 module = os.path.abspath(os.path.join(os.path.dirname(__file__), parent))
@@ -60,7 +60,7 @@ class HTTPSession:
         if not self.active():
             return b"", 0
         
-        content_length = get_content_length(bytes(data), default=-1)
+        content_length = search_header(bytes(data), SearchContext.CONTENT_LENGTH)
         while len(data) <= content_length:
             chunk = await self.__server.recv()
             if not self.active():
@@ -74,7 +74,7 @@ class HTTPSession:
     
     async def client_recv(self) -> SafeRecv:
         data = bytearray(b'')
-        while not has_ending_suffix(data):
+        while not contains_body_seperator(data):
             chunk = await self.__client.recv()
             if not self.active():
                 return b"", 1
