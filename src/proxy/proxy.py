@@ -53,6 +53,7 @@ class Proxy(BaseServer):
         
         # Valid input.
         else:
+            print(request)
             await http_session.send_to_server(request)
             response, err = await http_session.server_recv()
             if err:

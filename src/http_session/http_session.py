@@ -17,6 +17,8 @@ from net.network_object import (
     is_closed
 )
 from net.aionetwork import safe_send, SafeRecv, Address
+
+
 class HTTPSession:
     def __init__(self, client: ClientConnection, server: ServerConnection, proxy: Address) -> None:
         self.__client = client
@@ -60,7 +62,7 @@ class HTTPSession:
         if not self.active():
             return b"", 0
         
-        content_length = search_header(bytes(data), SearchContext.CONTENT_LENGTH)
+        content_length: int = int(search_header(bytes(data), SearchContext.CONTENT_LENGTH))
         while len(data) <= content_length:
             chunk = await self.__server.recv()
             if not self.active():

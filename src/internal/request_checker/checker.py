@@ -10,7 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(DIR, "../...")))
 
 from database import db
 from components.singleton import Singleton
-from http_tools import path_segment, get_host
+from http_tools.functions import SearchContext, search_header, path_segment
 
 
 URL_PARAM_PREFIX = "?"
