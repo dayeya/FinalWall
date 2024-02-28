@@ -57,7 +57,6 @@ class Proxy(BaseServer):
             response, err = await http_session.server_recv()
             if err:
                 self.logger.error(f"Could not recv any data from server: {http_session.server_addr}")
-            print(response)
             await http_session.send_to_client(response)
 
     async def start(self) -> None:

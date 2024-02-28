@@ -4,7 +4,7 @@ Author: Daniel Sapojnikov 2023.
 import os
 import sys
 from socket import socket
-from http_tools.functions import SearchContext, search_header, contains_body_seperator
+from http_tools import SearchContext, search_header, contains_body_seperator
 
 parent = '.../...'
 module = os.path.abspath(os.path.join(os.path.dirname(__file__), parent))
@@ -62,8 +62,6 @@ class HTTPSession:
                 break
             data += chunk
         
-        print(data)
-        
         content = b""
         content_length = int(search_header(data, SearchContext.CONTENT_LENGTH))
         while not len(content) >= content_length:
@@ -72,7 +70,6 @@ class HTTPSession:
                 break
             content += chunk
         
-        print(content)
         if not self.active():
             self.close_session()
             
