@@ -24,7 +24,6 @@ class HTTPSession:
         self.__client = client
         self.__server = server
         self.__proxy = proxy
-        self.__bytes_sent = {'client': 0,'server': 0}
     
     @property
     def proxy(self) -> Address:
@@ -42,10 +41,10 @@ class HTTPSession:
     def server_sock(self) -> socket:
         return self.__server.sock
     @property
-    def client_addr(self) -> socket:
+    def client_addr(self) -> Address:
         return self.__client.address
     @property
-    def server_addr(self) -> socket:
+    def server_addr(self) -> Address:
         return self.__server.address
     
     def close_session(self) -> None:
@@ -54,38 +53,43 @@ class HTTPSession:
     def active(self) -> bool:
         return is_closed(self.client_sock) or is_closed(self.server_sock)
     
-    def __update_seq(self, sender: str, seq: int) -> None:
-        self.__bytes_sent[sender] =+ seq
-    
     async def server_recv(self) -> SafeRecv:
-        data = bytearray(await self.__server.recv())
-        if not self.active():
-            return b"", 0
-        
-        content_length: int = int(search_header(bytes(data), SearchContext.CONTENT_LENGTH))
-        while len(data) <= content_length:
+        data = b""
+        chunk = b""
+        while not contains_body_seperator(data):
             chunk = await self.__server.recv()
-            if not self.active():
-                return b"", 1
-            data.extend(chunk)
-            self.__update_seq('server', len(chunk))
+            if not chunk: 
+                break
+            data += chunk
         
+        print(data)
+        
+        content = b""
+        content_length = int(search_header(data, SearchContext.CONTENT_LENGTH))
+        while not len(content) >= content_length:
+            chunk = await self.__server.recv()
+            if not chunk: 
+                break
+            content += chunk
+        
+        print(content)
         if not self.active():
             self.close_session()
-        return bytes(data), 0
+            
+        response = data + content
+        return response, 0
     
     async def client_recv(self) -> SafeRecv:
-        data = bytearray(b'')
+        data = b""
         while not contains_body_seperator(data):
             chunk = await self.__client.recv()
-            if not self.active():
-                return b"", 1
-            data.extend(chunk)
-            self.__update_seq('server', len(chunk))
+            if not chunk: 
+                break
+            data += chunk
             
         if not self.active():
             self.close_session()
-        return bytes(data), 0
+        return data, 0
     
     async def send_to_client(self, payload: bytes) -> None:
         if not self.active():

@@ -25,9 +25,10 @@ class Context:
 
 class SearchContext:
     HOST = Context(b"Host:", "Unknown")
-    CONTENT_LENGTH = Context(b"Conten-Length:", -1)
+    CONTENT_LENGTH = Context(b"Content-Length:", -1)
     USER_AGENT = Context(b"User-Agent:", "Unknown")
 
+# TODO: make this function more efficient.
 def path_segment(payload: str) -> str:
     for header in payload.split('\r\n'):
         match = re.search(r'\b(GET|POST|PUT|DELETE)\s+(/\S*)', header)
@@ -44,3 +45,8 @@ def search_header(request: bytes, context: SearchContext) -> bytes:
             data = line[idx+offset:]
             return data.strip()
     return context.default
+
+if __name__ == "__main__":
+    data = b"HTTP/1.1 200 OK\r\nServer: Werkzeug/3.0.1 Python/3.12.0\r\nDate: Wed, 28 Feb 2024 16:20:19 GMT\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: 577\r\nConnection: close\r\n\r\n"
+    match = search_header(data, SearchContext.CONTENT_LENGTH)
+    print(match)
