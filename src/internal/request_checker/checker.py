@@ -9,8 +9,9 @@ sys.path.append(os.path.abspath(ROOT_DIR))
 sys.path.append(os.path.abspath(os.path.join(DIR, "../...")))
 
 from database import db
+from .transaction import Transaction 
 from components.singleton import Singleton
-from http_tools.tools import SearchContext, search_header, path_segment
+from http_tools.tools import SearchContext, search_header
 
 
 URL_PARAM_PREFIX = "?"
@@ -24,13 +25,21 @@ class RequestChecker(metaclass=Singleton):
         self.locations = db.load_signatures("locations.txt")
     
     def check_request(self, request: bytes) -> bool:
-        return self.__check_forbidden_location(request)
+        
+        # Create a transaction.
+        tx: Transaction = Transaction(request)
+        tx.process()
+        
+        print(tx)
+        
+        return self.__check_forbidden_uri(tx)
     
     def contains_block(self, request: bytes) -> bool:
         return contains_block(request)
     
-    def __check_forbidden_location(self, request: bytes) -> bool:
-        common = self.locations.intersection({request})
+    def __check_forbidden_uri(self, tx: Transaction) -> bool:
+        uri = tx.uri.decode()
+        common = self.locations.intersection({uri})
         return bool(common)
         
     def __check_sql(self) -> None: 

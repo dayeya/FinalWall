@@ -19,7 +19,7 @@ def load_signatures(source_file: str) -> Set:
     try:
         source = abs_json_path(source_file, "signatures")
         with open(source, "r") as f:
-            return {line.lstrip().rstrip() 
+            return {line.strip()
                     for line in f.readlines() 
                     if not line.lstrip().startswith("#")}
     except FileNotFoundError:
