@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
-from typing import Optional
-from http_tools.tools import unpack_request_line
+from http_tools.tools import process_request_line, process_headers_and_body
+
+SERVER_RESPONSE = 0
+CLIENT_REQUEST = 1
 
 class Method:
     GET = b"GET"
@@ -23,24 +25,31 @@ class Transaction:
     Creates a signature of each HTTP request.
     """
     raw: bytes
+    side: int
     id: str = ""
     method: bytes = Method.GET
     uri: bytes = b""
-    version: bytes = b""
-    body: bytes = b""
     params: dict = field(default_factory=dict)
+    version: bytes = b""
+    headers: dict = field(default_factory=dict)
+    body: bytes = b""
     
-    def process(self) -> None: 
-        # TODO: Process each part of the transaction.
+    def process(self) -> None:
         self.__process_request_line()
+        self.__process_message()
     
     def __process_request_line(self) -> None:
-        self.method, self.uri, self.version = unpack_request_line(self.raw)
+        self.method, self.uri, self.version = process_request_line(self.raw)
     
     def __create_transaction_id(self) -> None:
         # TODO: Create a unique transaction id based on some parameters.
         pass
     
+    def __process_message(self) -> None:
+        self.headers, self.body = process_headers_and_body(self.raw)
+    
     def __process_headers(self) -> None:
-        # TODO: Create a dictionary of headrs from the transaction.
+        pass
+        
+    def __process_body(self) -> None:
         pass

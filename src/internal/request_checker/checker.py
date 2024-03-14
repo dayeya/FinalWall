@@ -9,8 +9,8 @@ sys.path.append(os.path.abspath(ROOT_DIR))
 sys.path.append(os.path.abspath(os.path.join(DIR, "../...")))
 
 from database import db
-from .transaction import Transaction 
 from components.singleton import Singleton
+from .transaction import Transaction, CLIENT_REQUEST
 from http_tools.tools import SearchContext, search_header
 
 
@@ -27,7 +27,7 @@ class RequestChecker(metaclass=Singleton):
     def check_request(self, request: bytes) -> bool:
         
         # Create a transaction.
-        tx: Transaction = Transaction(request)
+        tx = Transaction(request, CLIENT_REQUEST)
         tx.process()
         
         print(tx)

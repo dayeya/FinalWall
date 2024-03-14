@@ -5,6 +5,7 @@ http functions module.
 import os
 import re
 import sys
+from email.parser import BytesParser
 from typing import Any
 from dataclasses import dataclass
 
@@ -12,6 +13,7 @@ parent = "../."
 module = os.path.abspath(os.path.join(os.path.dirname(__file__), parent))
 sys.path.append(module)
 
+HS = b":"
 SP = b" "
 CR = b"\r"
 LF = b"\n"
@@ -41,7 +43,18 @@ def search_header(request: bytes, context: Context) -> bytes | Any:
             return data.strip()
     return context.default
 
-def unpack_request_line(request: bytes) -> tuple:
-    request_line: bytes = request.split(CRLF)[0]
+def process_request_line(request: bytes) -> tuple:
+    request_line: bytes = request.split(CRLF, maxsplit=1)[0]
     method, request_uri, http_version = request_line.strip().split(SP)
     return method, request_uri, http_version
+
+def process_header(header: bytes) -> tuple:
+    if HS in header:
+        field_name, field_value = header.split(HS, maxsplit=1)
+        return field_name, field_value.rstrip()
+    return header, b"Not valid"
+
+def process_headers_and_body(request: bytes) -> tuple: 
+    message, body = request.split(BODY_SEPERATOR)
+    headers: dict = {field: value for field, value in map(process_header, message.split(CRLF)[1:])}
+    return headers, body
