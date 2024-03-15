@@ -71,15 +71,15 @@ class Waf:
         # GET for security page.
         elif token := self.checker.contains_block(tx):
             block_html = build_block(token)
-            await self.proxy.send_to_client(client, block_html)
+            await self.proxy.send_to_conn(client, block_html)
         
         # Valid input.
         else:
-            await self.proxy.send_to_server(server, request)
+            await self.proxy.send_to_conn(server, request)
             response, err = await self.proxy.recv_from_server(server)
             if err:
                 self.logger.error(f"Failed recv.")
-            await self.proxy.send_to_client(client, response)
+            await self.proxy.send_to_conn(client, response)
             
     async def start(self) -> None:
         while True:
