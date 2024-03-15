@@ -4,6 +4,7 @@ import re
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 from conversion import encode, decode
+from internal.checker.transaction import Transaction, Method
 
 def _templates_path() -> Path:
     templates_path = Path(__file__).parent.joinpath("templates")
@@ -48,11 +49,10 @@ def build_redirect(location: bytes) -> bytes:
     redirect += b"Location: " + location + b"\r\n\r\n"
     return redirect
 
-def contains_block(request: bytes) -> str | None:
-    request = decode(request)
-    fline = request.split("\r\n")[0]
-    valid_block = re.match(BLOCK_REGEX, fline)
-    if valid_block: 
+def contains_block(tx: Transaction) -> str | None:
+    uri = tx.uri.decode()
+    valid_block: re.Match = re.match(BLOCK_REGEX, uri)
+    if tx.method == Method.GET and valid_block: 
         return valid_block.group(1)
     
     

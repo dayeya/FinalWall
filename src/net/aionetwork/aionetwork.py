@@ -13,11 +13,9 @@ null_ip = "0.0.0.0"
 loop_back = '127.0.0.1'
 Address = Tuple[str, int]
 
-type send_result = int
-type recv_result = Tuple[bytes, int]
-type SafeSend = int
-type SafeRecv = Tuple[bytes, int]
-type FunctionResult = Union[SafeRecv, SafeSend]
+type Safe_Send_Result = int
+type Safe_Recv_Result = Tuple[bytes, int]
+type FunctionResult = Union[Safe_Send_Result, Safe_Recv_Result]
 
 def __safe_socket_operation(func: Callable, sock: socket, *args: tuple) -> FunctionResult:
     """
@@ -29,12 +27,12 @@ def __safe_socket_operation(func: Callable, sock: socket, *args: tuple) -> Funct
     except Exception as e:
         print(f"Error while: {func.__name__} on socket: {sock.getsockname()}, {e}")
 
-async def safe_recv(sock: socket, buffer_size: int) -> SafeRecv:
+async def safe_recv(sock: socket, buffer_size: int) -> Safe_Recv_Result:
     """
     Waits for data from sock.
     :return: decoded data.
     """
-    async def recv_wrapper(sock: socket, loop: asyncio.AbstractEventLoop, buffer: int) -> recv_result:
+    async def recv_wrapper(sock: socket, loop: asyncio.AbstractEventLoop, buffer: int) -> Safe_Recv_Result:
         try:
             data = await loop.sock_recv(sock, buffer)
         except asyncio.IncompleteReadError:
@@ -56,7 +54,7 @@ async def safe_send(sock: socket, payload: bytes) -> None:
     Sends a payload from sock.
     :return: None.
     """
-    async def send_wrapper(sock: socket, loop: asyncio.AbstractEventLoop, payload: bytes) -> send_result:
+    async def send_wrapper(sock: socket, loop: asyncio.AbstractEventLoop, payload: bytes) -> Safe_Send_Result:
         return await loop.sock_sendall(sock, payload)
     
     loop = asyncio.get_event_loop()

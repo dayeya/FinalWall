@@ -1,1 +1,1 @@
-from .conf import load_config
+from .conf import Config

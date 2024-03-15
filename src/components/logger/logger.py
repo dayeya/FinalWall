@@ -1,9 +1,6 @@
 import logging
 from fmt_time import date_formatted_data
 
-ADMIN_LOGGER = 'ADMIN'
-PROXY_LOGGER = 'PROXY'
-PACKET_LOGGER = 'PACKET'
 FORMAT = "%(levelname)s: %(message)s"
 
 class Logger(logging.Logger):
