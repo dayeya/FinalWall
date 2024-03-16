@@ -1,6 +1,6 @@
 import os
 import sys
-import urllib.parse
+from urllib.parse import ParseResult
 from .actions.block import contains_block
 
 DIR = os.path.dirname(__file__)
@@ -13,10 +13,6 @@ from components.singleton import Singleton
 from .transaction import Transaction, CLIENT_REQUEST
 from http_tools.tools import SearchContext, search_header
 
-
-URL_PARAM_PREFIX = "?"
-URL_PARAM_SPERATOR = "&"
-URL_PARAM_EQUALS = "="
                 
 class Checker(metaclass=Singleton):
     def __init__(self) -> None:
@@ -31,12 +27,28 @@ class Checker(metaclass=Singleton):
         return contains_block(tx)
     
     def __check_forbidden_uri(self, tx: Transaction) -> bool:
-        uri = tx.uri.decode()
-        common = self.locations.intersection({uri})
+        """
+        Checks if the resource that the transaction was made for is accessable.
+        Accessable = inside the `locations.txt`.
+        """
+        path = tx.url.path.decode()
+        common = self.locations.intersection({path})
         return bool(common)
         
-    def __check_sql(self) -> None: 
-        pass
+    def __check_sql_injection(self, tx: Transaction) -> bool: 
+        """
+        Processes the transaction and finds any SQL Injection signatures.
+        Can be found at place of the transaction.
+        """
+        
+        # What if an SQL keyword appears at the URI location?
+        
+        # Check for SQL keywords in the parameters.
+        for field_name, field_value in tx.params.items():
+            fields_set = {field_name, field_value}
+            if fields_set.intersection(self.sqli):
+                return True
+        return False
     
     def __check_xss(self) -> None:
         pass

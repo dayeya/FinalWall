@@ -17,10 +17,9 @@ from internal.checker.actions.block import build_block, build_redirect
 class Waf:
     def __init__(self) -> None:
         self.cnf = Config()
+        self.proxy = Proxy()
         self.checker: Checker = Checker()
         self.logger = Logger("Waf")
-    
-        self.proxy = Proxy()
         
         address = self.cnf["Proxy"]
         self.__sock = socket(AF_INET, SOCK_STREAM)
@@ -60,26 +59,32 @@ class Waf:
         tx = self.__new_transaction(request, CLIENT_REQUEST)
         tx.process()    
         
-        # Check for malicious input.
+        # Check for malicious transaction.
         malicious_transaction = self.checker.check_transaction(tx)
         if malicious_transaction:
             token = tokenize()
             location = encode("/block?token=" + token)
             redirection = build_redirect(location)
-            await self.proxy.send_to_client(redirection)
+            await self.proxy.forward_data(client, redirection)
+            
+            # Update Security log.
 
         # GET for security page.
         elif token := self.checker.contains_block(tx):
             block_html = build_block(token)
-            await self.proxy.send_to_conn(client, block_html)
+            await self.proxy.forward_data(client, block_html)
+            
+            # Update Security log.
         
-        # Valid input.
+        # Valid transaction.
         else:
-            await self.proxy.send_to_conn(server, request)
+            await self.proxy.forward_data(server, request)
             response, err = await self.proxy.recv_from_server(server)
             if err:
                 self.logger.error(f"Failed recv.")
-            await self.proxy.send_to_conn(client, response)
+            await self.proxy.forward_data(client, response)
+            
+            # Update Access log.
             
     async def start(self) -> None:
         while True:

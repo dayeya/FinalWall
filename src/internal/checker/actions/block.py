@@ -2,8 +2,9 @@
 
 import re
 from pathlib import Path
+from conversion import encode
+from urllib.parse import urlunparse
 from jinja2 import Environment, FileSystemLoader
-from conversion import encode, decode
 from internal.checker.transaction import Transaction, Method
 
 def _templates_path() -> Path:
@@ -28,7 +29,7 @@ def _create_environment() -> Environment:
 
 ENV = _create_environment()
 SECURITY_PAGE = "security_page.html"
-BLOCK_REGEX = re.compile(r"GET /block[?]token=([a-z0-9]{8})")
+BLOCK_REGEX = re.compile(r"/block[?]token=([a-z0-9]{8})")
     
 def _push_args_into_template(activity_token: str) -> bytes:
     block_template = ENV.get_template(SECURITY_PAGE)
@@ -50,8 +51,8 @@ def build_redirect(location: bytes) -> bytes:
     return redirect
 
 def contains_block(tx: Transaction) -> str | None:
-    uri = tx.uri.decode()
-    valid_block: re.Match = re.match(BLOCK_REGEX, uri)
+    resource: bytes = urlunparse(tx.url)
+    valid_block: re.Match = re.match(BLOCK_REGEX, resource.decode())
     if tx.method == Method.GET and valid_block: 
         return valid_block.group(1)
     

@@ -1,12 +1,10 @@
-**between words: can be Space, TAB(s), +, /*, CRLF   -> 
-**spaces between words can be encode with URL Decoder (e.g. %0d%0a is CRLF, %09 is TAB)
-**the whole words can be encode with URI Encode 
-**  partial word can be encode with URI Encode (%53eLEct is SeLEct)
-**case insensetive
-**
-	
+# Case sensitive.
+# Allow multiple parts of the payload to be encoded, URI etc.
+# Allow LWS between words.
 
-***GENERAL *** Logic: search one word
+# General SQL keywords.
+
+OR
 SUBSTR(
 SUBSTRING(
 --comment
@@ -31,7 +29,7 @@ DROP TABLE
 DROP DATABASE
 EXEC xp_
 
-***SELECT*** Logic: two or more words
+# SELECT logic that contains 1 or 2 words.
 
 SELECT 
 FROM 
@@ -79,10 +77,12 @@ distinct
 AND
 BETWEEN
 
-***INSERT****Logic: two or more words
+# INSERT logic that contains 1 or 2 words.
+
 INSERT INTO
 VALUES 
 
-***UPDATE***Logic: two or more words
+# UPDATE logic that contains 1 or 2 words.
+
 UPDATE
 where
