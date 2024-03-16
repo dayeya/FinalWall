@@ -1,4 +1,4 @@
-from urllib.parse import ParseResult
+from urllib.parse import ParseResultBytes
 from dataclasses import dataclass, field
 from http_tools.tools import PARAM_START
 from http_tools.tools import process_request_line, process_headers_and_body, process_query
@@ -31,9 +31,9 @@ class Transaction:
     side: int
     id: str = ""
     method: bytes = Method.GET
-    url: ParseResult = None
+    url: ParseResultBytes = None
     version: bytes = b""
-    params: dict = field(default_factory=dict)
+    query_params: dict = field(default_factory=dict)
     headers: dict = field(default_factory=dict)
     body: bytes = b""
     
@@ -70,9 +70,9 @@ class Transaction:
         TODO: Parse the data before processing it.
         """
         if self.method == Method.GET:
-            self.params = process_query(self.url.params)
+            self.query_params = process_query(self.url.query)
         if self.method == Method.POST:
-            self.params = process_query(self.body)
+            self.query_params = process_query(self.body)
         if self.method == Method.PUT:
             assert False, "Not implemented."
         if self.method == Method.DELETE:

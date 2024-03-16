@@ -6,9 +6,10 @@ import os
 import re
 import sys
 from typing import Any
-from urllib.parse import urlparse, parse_qs, ParseResult, urlunparse
-from email.parser import BytesParser
 from dataclasses import dataclass
+from email.parser import BytesParser
+from urllib.parse import urlparse, parse_qs, ParseResult
+
 
 parent = "../."
 module = os.path.abspath(os.path.join(os.path.dirname(__file__), parent))
@@ -61,6 +62,7 @@ def process_header(header: bytes) -> tuple:
     return header, b"Not valid"
 
 def process_headers_and_body(request: bytes) -> tuple: 
+    # TODO: Identify multiple value headers.
     message, body = request.split(BODY_SEPERATOR)
     headers: dict = {field: value for field, value in map(process_header, message.split(CRLF)[1:])}
     return headers, body
@@ -68,7 +70,3 @@ def process_headers_and_body(request: bytes) -> tuple:
 def process_query(query: bytes) -> dict:
     params: dict = parse_qs(query, strict_parsing=True)
     return params
-
-
-if __name__ == "__main__":
-    pass
