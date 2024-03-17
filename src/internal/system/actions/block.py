@@ -5,7 +5,7 @@ from pathlib import Path
 from conversion import encode
 from urllib.parse import urlunparse
 from jinja2 import Environment, FileSystemLoader
-from internal.checker.transaction import Transaction, Method
+from internal.system.transaction import Transaction, Method
 
 def _templates_path() -> Path:
     templates_path = Path(__file__).parent.joinpath("templates")

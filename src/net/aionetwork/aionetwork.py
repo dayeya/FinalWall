@@ -7,11 +7,17 @@ import asyncio
 from socket import socket
 from threading import Thread
 from typing import Tuple, Callable, Union
+from dataclasses import dataclass
 
 # Universal networking constants.
 null_ip = "0.0.0.0"
 loop_back = '127.0.0.1'
-Address = Tuple[str, int]
+
+
+@dataclass
+class Address:
+    ip: str
+    port: int
 
 type Safe_Send_Result = int
 type Safe_Recv_Result = Tuple[bytes, int]

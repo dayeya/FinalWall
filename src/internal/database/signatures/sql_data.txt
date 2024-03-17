@@ -31,25 +31,13 @@ EXEC xp_
 
 # SELECT logic that contains 1 or 2 words.
 
-SELECT
 FROM 
 WHERE 
 LIKE 
 SLEEP
 SLEEPTIME
-THEN (SELECT
-SELECT COUNT
-SELECT banner
-SELECT version
-SELECT CASE
-SELECT IF
-SELECT pg_sleep(
-SELECT sleep(10)
 ((select
 SLEEP(
-CREATE FUNCTION
-REPLACE FUNCTION
-WAITFOR DELAY
 DECLARE
 BEGIN IF
 NULL
@@ -69,13 +57,26 @@ nslookup
 declare 
 LIKE
 table
-AND if
 UNION
 Query(
 concat(
 distinct
 AND
 BETWEEN
+
+THEN (SELECT
+SELECT COUNT
+SELECT banner
+SELECT version
+SELECT CASE
+SELECT IF
+SELECT pg_sleep(
+SELECT sleep(10)
+CREATE FUNCTION
+REPLACE FUNCTION
+WAITFOR DELAY
+AND if
+
 
 # INSERT logic that contains 1 or 2 words.
 

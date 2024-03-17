@@ -1,3 +1,4 @@
+from net.aionetwork import Address
 from urllib.parse import ParseResultBytes
 from dataclasses import dataclass, field
 from http_tools.tools import PARAM_START
@@ -27,6 +28,8 @@ class Transaction:
     """
     Creates a signature of each HTTP request.
     """
+    owner: Address
+    creation_date: str
     raw: bytes
     side: int
     id: str = ""

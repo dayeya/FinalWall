@@ -3,9 +3,9 @@ Author: Daniel Sapojnikov, 2023.
 Useful time functions. 
 """
 import pytz
-from datetime import datetime, timezone
+from datetime import datetime
 
-UNIX_TIME_FORMAT = "%d/%m/%Y - %H:%M"
+UNIX_TIME_FORMAT = "%d/%m/%Y - %H:%M:%S"
 
 def get_unix_time() -> str:
     """

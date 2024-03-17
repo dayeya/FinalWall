@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Set
+from typing import Generator
 
 def abs_json_path(file_name: str, *nodes) -> Path:
     """Computes the absolute path of jname (based on this root dir)"""
@@ -15,13 +15,11 @@ def load_rules() -> dict:
     with open(abs_json_path('database/rules.json'), 'r') as r:
         return json.loads(r.read())
     
-def load_signatures(source_file: str) -> Set:
+def load_signatures(source_file: str) -> Generator:
     try:
         source = abs_json_path(source_file, "signatures")
         with open(source, "r") as f:
-            return {line.strip()
-                    for line in f.readlines() 
-                    if not line.lstrip().startswith("#")}
+            return (line.strip() for line in f.readlines() if not line.lstrip().startswith("#"))
     except FileNotFoundError:
         # Empty set, for now.
         return set([])
