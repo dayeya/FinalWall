@@ -128,7 +128,7 @@
 /usr/local/apache/logs/access.log
 /usr/local/apache/logs/error_log
 /usr/local/apache/logs/error.log
-/usr/local/apache/logs/error. og
+/usr/local/apache/logs/error.log
 /usr/local/apps/apache2/conf/httpd.conf
 /usr/local/apps/apache/conf/httpd.conf
 /usr/local/etc/apache2/conf/httpd.conf

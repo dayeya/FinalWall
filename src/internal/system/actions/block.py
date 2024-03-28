@@ -52,7 +52,7 @@ def build_redirect(location: bytes) -> bytes:
 
 def contains_block(tx: Transaction) -> str | None:
     resource: bytes = urlunparse(tx.url)
-    valid_block: re.Match = re.match(BLOCK_REGEX, resource.decode())
+    valid_block: re.Match = re.match(BLOCK_REGEX, resource)
     if tx.method == Method.GET and valid_block: 
         return valid_block.group(1)
     

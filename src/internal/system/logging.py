@@ -1,25 +1,32 @@
 from dataclasses import dataclass
 from typing import Union
+from enum import Enum
+
+class AttackClassifier(Enum):
+    UNAUTHORIZED_ACCESS = "Unauthorized Access"
+    SQL_INJECTION = "SQL Injection"
 
 @dataclass(slots=True)
-class SecurityLog:
-    owner_ip: str
-    owner_port: int
-    file_name: str 
-    description: str
-    attack: str
+class LogSettings:
+    downloadable: bool
+
+@dataclass(slots=True)
+class Log:
+    ip: str
+    port: int
+    creation_date: str
+
+@dataclass(slots=True)
+class SecurityLog(Log):
+    attack: AttackClassifier
     
     # TODO: how to download the file (Create a download whole alert when hovering on the log).
     # TODO: Data compression.
 
 
 @dataclass(slots=True)
-class AccessLog:
-    owner_ip: str
-    owner_port: int
-    description: str
-    file_name: str
-    creation_date: str
+class AccessLog(Log):
+    pass
     
     # TODO: how to download the file (Create a download whole alert when hovering on the log).
     # TODO: Data compression.

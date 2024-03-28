@@ -4,9 +4,6 @@ from net.aionetwork import safe_send, Address, Safe_Send_Result, Safe_Recv_Resul
 from http_tools import SearchContext, search_header, contains_body_seperator
 
 class Proxy:
-    async def forward_data(self, conn: Connection, data: bytes) -> None:
-        await conn.send(data)
-            
     async def recv_from_server(self, server: Connection) -> Safe_Recv_Result:
         data = b""
         chunk = b""
@@ -35,3 +32,6 @@ class Proxy:
                 break
             data += chunk
         return data, 0
+    
+    async def forward_data(self, conn: Connection, data: bytes) -> None:
+        await conn.send(data)

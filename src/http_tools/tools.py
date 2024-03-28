@@ -5,10 +5,11 @@ http functions module.
 import os
 import re
 import sys
+import base64
 from typing import Any
 from dataclasses import dataclass
 from email.parser import BytesParser
-from urllib.parse import urlparse, parse_qs, ParseResult
+from urllib.parse import urlparse, parse_qs, unquote, unquote_to_bytes, ParseResult
 
 
 parent = "../."
@@ -49,10 +50,22 @@ def search_header(request: bytes, context: Context) -> bytes | Any:
             return data.strip()
     return context.default
 
+def decode_any_encoding(data: bytes) -> str:
+    decoded = ""
+    try: 
+        decoded: str = unquote(data)
+    except Exception as _url_decoding_err: 
+        pass
+    try:
+        decoded: str = str(base64.b64decode(decoded), encoding="utf-8")
+    except Exception as _64_decoding_err: 
+        pass
+    return decoded
+
 def process_request_line(request: bytes) -> tuple:
     request_line: bytes = request.split(CRLF, maxsplit=1)[0]
     method, request_uri, http_version = request_line.strip().split(SP)
-    request_uri = urlparse(request_uri)
+    request_uri = urlparse(decode_any_encoding(request_uri))
     return method, request_uri, http_version
 
 def process_header(header: bytes) -> tuple:
@@ -65,8 +78,16 @@ def process_headers_and_body(request: bytes) -> tuple:
     # TODO: Identify multiple value headers.
     message, body = request.split(BODY_SEPERATOR)
     headers: dict = {field: value for field, value in map(process_header, message.split(CRLF)[1:])}
-    return headers, body
+    return headers, decode_any_encoding(body)
 
 def process_query(query: bytes) -> dict:
+    """
+    Creates a processed dictionary out of a raw byte stream.
+    Handles all implemented encoding schemes.
+    """
+    def decode_query(kv: tuple) -> dict:
+        return (decode_any_encoding(kv[0]), map(decode_any_encoding, kv[1]))
+    
     params: dict = parse_qs(query, strict_parsing=True)
-    return params
+    decoded_params: dict = dict(map(decode_query, params.items()))
+    return decoded_params

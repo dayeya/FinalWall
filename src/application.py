@@ -68,8 +68,6 @@ class Waf:
         tx = self.__new_transaction(client.address, request, CLIENT_REQUEST, creation_date=get_unix_time())
         tx.process()
         
-        print(tx)
-        
         # Check for malicious transaction.
         valid_transaction, log_object = self.checker.check_transaction(tx)
         if valid_transaction:

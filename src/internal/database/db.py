@@ -14,12 +14,14 @@ def load_rules() -> dict:
     """Loads all rules from db"""
     with open(abs_json_path('database/rules.json'), 'r') as r:
         return json.loads(r.read())
-    
+
 def load_signatures(source_file: str) -> Generator:
     try:
         source = abs_json_path(source_file, "signatures")
+        is_signature = lambda s: s and not s.strip().startswith("#") 
         with open(source, "r") as f:
-            return (line.strip() for line in f.readlines() if not line.lstrip().startswith("#"))
+            data = set([line.strip() for line in f.readlines()])
+            return set(filter(is_signature, data))
     except FileNotFoundError:
         # Empty set, for now.
         return set([])

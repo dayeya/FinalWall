@@ -75,7 +75,9 @@ class Transaction:
         if self.method == Method.GET:
             self.query_params = process_query(self.url.query)
         if self.method == Method.POST:
-            self.query_params = process_query(self.body)
+            body_params = process_query(self.body)
+            query_params = process_query(self.url.query)
+            self.query_params = body_params | query_params
         if self.method == Method.PUT:
             assert False, "Not implemented."
         if self.method == Method.DELETE:
