@@ -5,7 +5,9 @@ Useful time functions.
 import pytz
 from datetime import datetime
 
+
 UNIX_TIME_FORMAT = "%d/%m/%Y - %H:%M:%S"
+
 
 def get_unix_time() -> str:
     """
@@ -14,6 +16,7 @@ def get_unix_time() -> str:
     """
     uni_time = datetime.now(pytz.timezone("Asia/Jerusalem"))
     return uni_time.strftime(UNIX_TIME_FORMAT)
+
 
 def date_formatted_data(data: str) -> str:
     """

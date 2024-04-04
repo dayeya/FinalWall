@@ -5,9 +5,11 @@ from pathlib import Path
 ROOT_DIR = Path(__file__)
 CONFIG_FILE = "config.toml"
 
+
 def full_path(file: str) -> Path:
     return ROOT_DIR.parent.joinpath(file)
-    
+
+
 def load_config() -> dict:
     try:
         with open(full_path(CONFIG_FILE), 'rb') as conf:
@@ -26,6 +28,7 @@ def load_config() -> dict:
     except FileNotFoundError as file_error:
         # TODO: Handle this error.
         raise file_error
+
 
 class Config:
     def __init__(self) -> None:

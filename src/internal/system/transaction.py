@@ -1,11 +1,12 @@
-from net.aionetwork import Address
+from src.net.aionetwork import Address
 from urllib.parse import ParseResultBytes
 from dataclasses import dataclass, field
-from http_tools.tools import PARAM_START
-from http_tools.tools import process_request_line, process_headers_and_body, process_query
+from src.http_tools.tools import process_request_line, process_headers_and_body, process_query
+
 
 SERVER_RESPONSE = 0
 CLIENT_REQUEST = 1
+
 
 class Method:
     GET = b"GET"
@@ -17,12 +18,14 @@ class Method:
     CONNECT = b"CONNECT"
     OPTIONS = b"OPTIONS"
 
+
 class Parser:
     """
     Normalizes data encoded in different methods.
     TODO: Identify escape sequences e.g. SEL\bLECT = SELECT
     """
-    
+
+
 @dataclass(slots=True)
 class Transaction:
     """

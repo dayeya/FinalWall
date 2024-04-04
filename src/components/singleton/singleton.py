@@ -2,6 +2,7 @@ from typing import Type
 
 Inheritor = Type[object]
 
+
 class Singleton(type):
     __instances = {}
     

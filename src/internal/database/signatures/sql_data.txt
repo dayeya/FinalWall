@@ -31,7 +31,7 @@ EXEC xp_
 
 # SELECT logic that contains 1 or 2 words.
 
-FROM 
+FROM
 WHERE 
 LIKE 
 SLEEP

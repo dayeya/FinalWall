@@ -1,7 +1,8 @@
 import logging
-from fmt_time import date_formatted_data
+from src.fmt_time import date_formatted_data
 
 FORMAT = "%(levelname)s: %(message)s"
+
 
 class Logger(logging.Logger):
     def __init__(self, name: str, depth: int=logging.DEBUG) -> None:

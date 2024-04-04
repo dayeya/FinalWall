@@ -19,9 +19,11 @@ class Address:
     ip: str
     port: int
 
+
 type Safe_Send_Result = int
 type Safe_Recv_Result = Tuple[bytes, int]
 type FunctionResult = Union[Safe_Send_Result, Safe_Recv_Result]
+
 
 def __safe_socket_operation(func: Callable, sock: socket, *args: tuple) -> FunctionResult:
     """
@@ -33,14 +35,15 @@ def __safe_socket_operation(func: Callable, sock: socket, *args: tuple) -> Funct
     except Exception as e:
         print(f"Error while: {func.__name__} on socket: {sock.getsockname()}, {e}")
 
+
 async def safe_recv(sock: socket, buffer_size: int) -> Safe_Recv_Result:
     """
     Waits for data from sock.
     :return: decoded data.
     """
-    async def recv_wrapper(sock: socket, loop: asyncio.AbstractEventLoop, buffer: int) -> Safe_Recv_Result:
+    async def recv_wrapper(_sock: socket, _loop: asyncio.AbstractEventLoop, buffer: int) -> Safe_Recv_Result:
         try:
-            data = await loop.sock_recv(sock, buffer)
+            data = await _loop.sock_recv(_sock, buffer)
         except asyncio.IncompleteReadError:
             return b"", 1
             
@@ -55,6 +58,7 @@ async def safe_recv(sock: socket, buffer_size: int) -> Safe_Recv_Result:
     loop = asyncio.get_event_loop()
     return await __safe_socket_operation(recv_wrapper, sock, loop, buffer_size)
 
+
 async def safe_send(sock: socket, payload: bytes) -> None:
     """
     Sends a payload from sock.
@@ -66,6 +70,7 @@ async def safe_send(sock: socket, payload: bytes) -> None:
     loop = asyncio.get_event_loop()
     await __safe_socket_operation(send_wrapper, sock, loop, payload)
 
+
 async def safe_send_recv(sock: socket, payload: str) -> str:
     """
     Sends a payload from sock and waits for an answer, using a safe operation.
@@ -74,13 +79,15 @@ async def safe_send_recv(sock: socket, payload: str) -> str:
     await safe_send(sock, payload)
     data = await safe_recv(sock)
     return data
-    
+
+
 def create_new_thread(func: Callable, *args: tuple) -> Thread:
     """
     Creates a local thread.
     :returns: Thread.
     """
     return Thread(target=func, args=args)
+
 
 def create_new_task(task_name:str, task: Callable, args: tuple) -> asyncio.Task:
     """

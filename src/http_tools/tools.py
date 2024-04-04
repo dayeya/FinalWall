@@ -6,41 +6,40 @@ import os
 import re
 import sys
 import base64
-from typing import Any
+from typing import Any, Tuple
 from dataclasses import dataclass
 from email.parser import BytesParser
 from urllib.parse import urlparse, parse_qs, unquote, unquote_to_bytes, ParseResult
-
-
-parent = "../."
-module = os.path.abspath(os.path.join(os.path.dirname(__file__), parent))
-sys.path.append(module)
 
 HS = b":"
 SP = b" "
 CR = b"\r"
 LF = b"\n"
 CRLF = b"\r\n"
-BODY_SEPERATOR = b"\r\n\r\n"
+BODY_SEPARATOR = b"\r\n\r\n"
 
 PARAM_START = b"?"
 PARAM_SEPARATOR = b"&"
 PARAM_EQUALS = b"="
 
-# Header seerching ; TODO: Make it perform better.
+# Header searching ; TODO: Make it perform better.
+
 
 @dataclass(slots=True)
 class Context:
     inner: bytes
     default: Any
 
+
 class SearchContext:
     HOST = Context(b"Host:", None)
     CONTENT_LENGTH = Context(b"Content-Length:", -1)
     USER_AGENT = Context(b"User-Agent:", None)
-    
+
+
 def contains_body_seperator(request: bytes) -> bool:
-    return BODY_SEPERATOR in request
+    return BODY_SEPARATOR in request
+
 
 def search_header(request: bytes, context: Context) -> bytes | Any:
     offset = len(context.inner)
@@ -50,17 +49,19 @@ def search_header(request: bytes, context: Context) -> bytes | Any:
             return data.strip()
     return context.default
 
+
 def decode_any_encoding(data: bytes) -> str:
     decoded = ""
-    try: 
+    try:
         decoded: str = unquote(data)
-    except Exception as _url_decoding_err: 
+    except Exception as _url_decoding_err:
         pass
     try:
         decoded: str = str(base64.b64decode(decoded), encoding="utf-8")
-    except Exception as _64_decoding_err: 
+    except Exception as _64_decoding_err:
         pass
     return decoded
+
 
 def process_request_line(request: bytes) -> tuple:
     request_line: bytes = request.split(CRLF, maxsplit=1)[0]
@@ -68,26 +69,29 @@ def process_request_line(request: bytes) -> tuple:
     request_uri = urlparse(decode_any_encoding(request_uri))
     return method, request_uri, http_version
 
+
 def process_header(header: bytes) -> tuple:
     if HS in header:
         field_name, field_value = header.split(HS, maxsplit=1)
         return field_name, field_value.rstrip()
     return header, b"Not valid"
 
-def process_headers_and_body(request: bytes) -> tuple: 
+
+def process_headers_and_body(request: bytes) -> tuple:
     # TODO: Identify multiple value headers.
-    message, body = request.split(BODY_SEPERATOR)
+    message, body = request.split(BODY_SEPARATOR)
     headers: dict = {field: value for field, value in map(process_header, message.split(CRLF)[1:])}
     return headers, decode_any_encoding(body)
+
 
 def process_query(query: bytes) -> dict:
     """
     Creates a processed dictionary out of a raw byte stream.
     Handles all implemented encoding schemes.
     """
-    def decode_query(kv: tuple) -> dict:
-        return (decode_any_encoding(kv[0]), map(decode_any_encoding, kv[1]))
-    
+    def _process_query(kv: tuple) -> tuple:
+        return decode_any_encoding(kv[0]), map(decode_any_encoding, kv[1])
+
     params: dict = parse_qs(query, strict_parsing=True)
-    decoded_params: dict = dict(map(decode_query, params.items()))
+    decoded_params: dict = dict(map(_process_query, params.items()))
     return decoded_params
