@@ -10,29 +10,25 @@ def full_path(file: str) -> Path:
     return ROOT_DIR.parent.joinpath(file)
 
 
-def load_config() -> dict:
+def _parse_toml() -> dict:
     try:
         with open(full_path(CONFIG_FILE), 'rb') as conf:
-            data = tomllib.load(conf)
-            
-        server = data.get('WebServer')
-        proxy  = data.get('Proxy')
-        admin  = data.get('Admin')
-        
-        return {
-            "Server": (server["ip"], server["port"]),
-            "Proxy": (proxy["ip"],  proxy["port"]),
-            "Admin": (admin["ip"],  admin["port"])
-        }
-            
-    except FileNotFoundError as file_error:
-        # TODO: Handle this error.
-        raise file_error
+            configuration: dict[str, Any] = tomllib.load(conf)
+        return configuration
+    except FileNotFoundError as _file_err:
+        raise _file_err
 
 
 class Config:
     def __init__(self) -> None:
-        self.conf = load_config()
-        
-    def __getitem__(self, __item: str) -> Any:
-        return self.conf[__item]
+        self.reserve = {}
+        config = _parse_toml()
+        for field, value in config.items():
+            setattr(self, field.lower(), value)
+            self.reserve[field] = value
+
+    def __getattr__(self, item):
+        try:
+            return self.reserve[item]
+        except KeyError:
+            print(f"ERROR: Object has no field named {item}.")

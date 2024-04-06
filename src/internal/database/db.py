@@ -1,5 +1,9 @@
+import json
 from pathlib import Path
 from src.components import Singleton
+
+
+ROOT_FOLDER = "signatures"
 
 
 def abs_node_path(node: str, *other_nodes) -> Path:
@@ -14,47 +18,31 @@ def abs_node_path(node: str, *other_nodes) -> Path:
     return absolute_path
 
 
-class SignaturesDB(metaclass=Singleton):
-    def __init__(self, root_folder: str="") -> None:    
-        self.sql_data_set: set = {}
-        self.xss_data_set: set = {}
-        self.unauthorized_access_data_set: set = {}
-        self.__root_dir: Path = abs_node_path(root_folder)
-    
-    @staticmethod
-    def __determine_if_signature(sig: str) -> bool:
-        return bool(sig and not sig.strip().startswith("#"))
+def _load_unauthorized_data() -> list:
+    def _filter_data(_data: str) -> bool:
+        return not _data.startswith("#") and _data
 
-    def __load_signatures_from(self, source_file: str) -> set:
-        """
-        Loads data from `source_file`.
-        :returns: Set containing all signatures.
-        """
-        try:
-            absolute_path = self.__root_dir.joinpath(source_file)
-            with open(absolute_path, "r") as data_file:
-                data = set([line.strip() for line in data_file.readlines()])
-                return set(filter(self.__determine_if_signature, data))
-            
-        except FileNotFoundError as _e:
-            return set([])
-        
-    def load_data_sets(self) -> None:
-        try:
-            self.sql_data_set = self.__load_signatures_from("sql_data.txt")
-            self.xss_data_set = self.__load_signatures_from("xss_data.txt")
-            self.unauthorized_access_data_set = self.__load_signatures_from("unauthorized_access.txt")
-        except Exception as _failed_data_sets_loading_err:
-            pass
+    path = abs_node_path(ROOT_FOLDER).joinpath("unauthorized_access.txt")
+    with open(path, "r") as unauthorized_locations:
+        return list(filter(_filter_data, unauthorized_locations.read().splitlines()))
 
 
-def initialize_database_instance() -> None:
-    """
-    Initializes database singleton instance.
-    :returns: None
-    """
+def _load_json_file(json_file: str) -> dict:
     try:
-        signatures_db: SignaturesDB = SignaturesDB(root_folder="signatures")
-        signatures_db.load_data_sets()
-    except Exception as _database_loading_err:
-        print("ERROR: Could not initialize signatures DB due:", _database_loading_err)
+        path = abs_node_path(ROOT_FOLDER).joinpath(json_file)
+        with open(path, "r") as json_data:
+            return json.load(json_data)
+    except Exception as _e:
+        raise _e
+
+
+class SignaturesDB(Singleton):
+    def __init__(self) -> None:
+        self.sql_data_set: dict = _load_json_file("sql_data.json")
+        self.xss_data_set: dict = _load_json_file("xss_data.json")
+        self.unauthorized_access_data_set: list = _load_unauthorized_data()
+
+
+SIGNATURE_DB = SignaturesDB()
+
+__all__ = ["SIGNATURE_DB"]

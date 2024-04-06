@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Union
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 # TODO Make logging as one file or DB.
@@ -25,6 +25,7 @@ class Log:
 @dataclass(slots=True)
 class SecurityLog(Log):
     attack: AttackClassifier
+    malicious_data: str
     
     # TODO: how to download the file (Create a download whole alert when hovering on the log).
     # TODO: Data compression.

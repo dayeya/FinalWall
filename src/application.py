@@ -8,31 +8,30 @@ from src.proxy.proxy import recv_from_client, forward_data, recv_from_server
 from conversion import encode
 from components import BlackList, Logger
 
-from net.connection import Connection
+from net.connection import Connection, establish_connection
 from net.aionetwork import create_new_task, Address
 
 from internal.tokenization import tokenize
 from internal.system.checker import Checker
-from internal.database import initialize_database_instance, SignaturesDB
+from internal.database import SignaturesDB
 from internal.system.actions.block import build_block, build_redirect
 from internal.system.transaction import Transaction, SERVER_RESPONSE, CLIENT_REQUEST
 
 
-# TODO: Manage sessions for each client.
-
 class Waf:
     def __init__(self) -> None:
-        self.cnf = Config()
-        self.checker: Checker = Checker()
+        self.config = Config()
+        self.checker = Checker()
         self.logger = Logger("Waf")
 
-        address = self.cnf["Proxy"]
+        self.__address = self.config.proxy
+        self.__address = self.__address["ip"], self.__address["port"]
         self.__sock = socket(AF_INET, SOCK_STREAM)
-        self.__sock.bind(address)
+        self.__sock.bind(self.__address)
         self.__sock.listen()
         self.__sock.setblocking(False)
 
-        self.logger.info(f"NetGuard running, {address}")
+        self.logger.info(f"NetGuard running, {self.__address}")
 
     async def __accept_client(self) -> Connection:
         loop = asyncio.get_event_loop()
@@ -43,24 +42,9 @@ class Waf:
     def new_transaction(owner: Address, data: bytes, side: int, creation_date) -> Transaction:
         return Transaction(owner=owner, creation_date=creation_date, raw=data, side=side)
 
-    async def __wire_new_connection(self) -> Connection:
-        """
-        Creates a new `Connection` to the web server to handle each TCP stream.
-        :returns: Connection object.
-        """
-        try:
-            loop = asyncio.get_event_loop()
-            server_address: tuple = self.cnf["Server"]
-            sock = socket(AF_INET, SOCK_STREAM)
-            await loop.sock_connect(sock, server_address)
-            return Connection(sock, server_address)
-
-        except OSError as e:
-            self.logger.error(f"Connection error, {e}")
-            return
-
     async def __handle_connection(self, client: Connection) -> None:
-        server = await self.__wire_new_connection()
+        ip, port = self.config.webserver["ip"], self.config.webserver["port"]
+        server = await establish_connection(target=(ip, port))
         request, err = await recv_from_client(client)
         if err:
             self.logger.error(f"Failed request.")
@@ -69,7 +53,7 @@ class Waf:
         tx.process()
 
         # Check for malicious transaction.
-        valid_transaction, log_object = self.checker.check_transaction(tx)
+        valid_transaction, log_object = await self.checker.check_transaction(tx)
         if valid_transaction:
             token = tokenize()
             location = encode("/block?token=" + token)
@@ -79,12 +63,10 @@ class Waf:
             # Log the alert (Security log)
             print(log_object)
 
-        # GET for security page.
         elif token := self.checker.contains_block(tx):
             block_html: bytes = build_block(token)
             await forward_data(client, block_html)
 
-        # Valid transaction.
         else:
             print(log_object)
             await forward_data(server, request)
@@ -92,8 +74,6 @@ class Waf:
             if err:
                 self.logger.error(f"Failed recv.")
             await forward_data(client, response)
-
-            # Update Access log.
 
     async def start(self) -> None:
         while True:
@@ -106,7 +86,13 @@ class Waf:
             await task
 
 
-if __name__ == "__main__":
-    initialize_database_instance()
+async def main():
+    try:
+        SignaturesDB()
+    except Exception as _database_loading_err:
+        print("ERROR: Could not initialize signaturesDB due:", _database_loading_err)
     waf = Waf()
-    asyncio.run(waf.start())
+    await waf.start()
+
+if __name__ == "__main__":
+    asyncio.run(main())

@@ -1,1 +1,1 @@
-from .db import initialize_database_instance, SignaturesDB
+from .db import SignaturesDB

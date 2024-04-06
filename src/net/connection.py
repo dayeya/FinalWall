@@ -1,5 +1,6 @@
+import asyncio
 from typing import Tuple
-from socket import socket, MSG_PEEK
+from socket import socket, AF_INET, SOCK_STREAM
 from dataclasses import dataclass
 from src.net.aionetwork import safe_send, safe_recv, Safe_Recv_Result
 
@@ -31,18 +32,11 @@ class Connection:
         await safe_send(self.sock, data)
 
 
-def close_all(*objects: Tuple[Connection]) -> None:
-    for closable in objects:
-        try:
-            closable.close()
-        except Exception as close_error:
-            classify = closable.__class__.__name__
-            print(f"[!] {classify}.close() was not complete. {close_error}")
-
-
-def is_closed(obj: Connection) -> bool:
+async def establish_connection(target: Address) -> Connection:
     try:
-        obj_sock = obj.sock if not isinstance(obj, socket) else obj
-        return not bool(obj_sock.recv(1, MSG_PEEK))
-    except:
-        return True
+        loop = asyncio.get_event_loop()
+        sock = socket(AF_INET, SOCK_STREAM)
+        await loop.sock_connect(sock, target)
+        return Connection(sock, target)
+    except OSError as _e:
+        print(f"ERROR: Could not connect to {target}")
