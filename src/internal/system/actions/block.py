@@ -56,7 +56,7 @@ def build_redirect(location: bytes) -> bytes:
     return redirect
 
 
-def contains_block(tx: Transaction) -> str | None:
+def contains_block(tx: Transaction) -> str:
     resource: bytes = urlunparse(tx.url)
     valid_block: re.Match = re.match(BLOCK_REGEX, resource)
     if tx.method == Method.GET and valid_block: 

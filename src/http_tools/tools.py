@@ -74,7 +74,7 @@ def process_header(header: bytes) -> tuple:
     if HS in header:
         field_name, field_value = header.split(HS, maxsplit=1)
         return field_name, field_value.rstrip()
-    return header, b"Not valid"
+    return header, b"not found"
 
 
 def process_headers_and_body(request: bytes) -> tuple:

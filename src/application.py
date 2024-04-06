@@ -90,7 +90,7 @@ async def main():
     try:
         SignaturesDB()
     except Exception as _database_loading_err:
-        print("ERROR: Could not initialize signaturesDB due:", _database_loading_err)
+        print("ERROR: Could not initialize database due:", _database_loading_err)
     waf = Waf()
     await waf.start()
 

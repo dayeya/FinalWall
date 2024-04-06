@@ -7,7 +7,7 @@ from src.internal.system.logging import AttackClassifier, SecurityLog, AccessLog
 
 
 # CheckResult = [Malicious or not, A log object]
-type CheckResult = Tuple[bool, LogType]
+type CheckResult = Tuple[bool, LogType | None]
 
 PAIR_SEPARATOR = ","
 
@@ -33,7 +33,7 @@ class Checker:
         return False, log
 
     @staticmethod
-    def contains_block(tx: Transaction) -> bool:
+    def contains_block(tx: Transaction) -> str | None:
         return contains_block(tx)
 
     @staticmethod
@@ -50,7 +50,7 @@ class Checker:
                     ip=tx.owner.ip,
                     port=tx.owner.port,
                     creation_date=tx.creation_date,
-                    malicious_data=tx.url.path
+                    malicious_data=tx.url.path.decode()
                 )
                 return True, log
             return False, None
