@@ -22,14 +22,13 @@ class Checker:
         xff, log = await validate_xff_ips(tx)
         if xff:
             return xff, log
-        unauthorized, log = await self.__check_path(tx)
+        unauthorized, log = self.__check_path(tx)
         if unauthorized:
             return unauthorized, log
-        sqli, log = await self.__check_sql_injection(tx)
+        sqli, log = self.__check_sql_injection(tx)
         if sqli:
             return sqli, log
 
-        print(tx)
         log = AccessLog(
             ip=tx.real_host_address.ip if tx.real_host_address is not None else tx.owner.port,
             port=tx.real_host_address.port if tx.real_host_address is not None else tx.owner.port,
@@ -42,7 +41,7 @@ class Checker:
         return contains_block(tx)
 
     @staticmethod
-    async def __check_path(tx: Transaction) -> CheckResult:
+    def __check_path(tx: Transaction) -> CheckResult:
         """
         Checks if the resource that the transaction was made for is authorized.
         """
@@ -55,13 +54,14 @@ class Checker:
                     ip=tx.owner.ip,
                     port=tx.owner.port,
                     creation_date=tx.creation_date,
-                    malicious_data=tx.url.path
+                    malicious_data=tx.url.path,
+                    metadata={}
                 )
                 return True, log
             return False, None
 
     @staticmethod
-    async def __check_sql_injection(tx: Transaction) -> CheckResult:
+    def __check_sql_injection(tx: Transaction) -> CheckResult:
         """
         Processes the transaction and finds any SQL injection signatures.
         """
@@ -89,7 +89,8 @@ class Checker:
                             ip=tx.owner.ip,
                             port=tx.owner.port,
                             creation_date=tx.creation_date,
-                            malicious_data=current_query_val
+                            malicious_data=current_query_val,
+                            metadata={}
                         )
                         return True, log
 
@@ -100,7 +101,8 @@ class Checker:
                                 ip=tx.owner.ip,
                                 port=tx.owner.port,
                                 creation_date=tx.creation_date,
-                                malicious_data=current_query_val
+                                malicious_data=current_query_val,
+                                metadata={}
                             )
                             return True, log
             return False, None

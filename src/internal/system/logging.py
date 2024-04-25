@@ -26,7 +26,7 @@ class Log:
 class SecurityLog(Log):
     attack: AttackClassifier
     malicious_data: bytes
-    description: str = ""
+    metadata: dict
     
     # TODO: how to download the file (Create a download whole alert when hovering on the log).
     # TODO: Data compression.

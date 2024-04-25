@@ -19,9 +19,6 @@ class Connection:
         except OSError:
             print(f"ERROR: Could not establish connection with {self.addr}")
 
-    def close(self) -> None:
-        self.sock.close()
-
     async def recv(self) -> bytes:
         data, err = await safe_recv(self.sock, buffer_size=8192)
         if err:
@@ -30,6 +27,9 @@ class Connection:
 
     async def send(self, data: bytes) -> None:
         await safe_send(self.sock, data)
+
+    def close(self) -> None:
+        self.sock.close()
 
     def __hash__(self) -> int:
         return hash((self.sock, self.addr))

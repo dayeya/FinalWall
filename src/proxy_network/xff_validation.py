@@ -1,7 +1,7 @@
 # https://adam-p.ca/blog/2022/03/x-forwarded-for - for a great XFF security decisions.
 
 import asyncio
-import src.net.aionetwork as anet
+from src.net.aionetwork import create_new_task, convert_netloc, HostAddress
 from src.internal.system.transaction import Transaction
 from src.internal.system.logging import SecurityLog, AttackClassifier
 
@@ -15,9 +15,9 @@ def behind_proxy(tx: Transaction) -> bool:
         return False
     return True
 
- 
+
 async def _validate_ip_address(ip: str):
-    valid = anet.convert_netloc(ip) and ip in TRUSTED_PROXY_LIST
+    valid = convert_netloc(ip) and ip in TRUSTED_PROXY_LIST
     return ip if not valid else None
 
 
@@ -29,7 +29,7 @@ async def validate_xff_ips(tx: Transaction):
 
     network_layers = [layer.strip() for layer in tx.headers[b"X-Forwarded-For"].decode().split(XFF_SEP)]
     work = [
-        anet.create_new_task(
+        create_new_task(
             task_name=f"VALIDATION({ip})",
             task=_validate_ip_address,
             args=(ip,)
@@ -45,12 +45,14 @@ async def validate_xff_ips(tx: Transaction):
             port=tx.owner.port,
             creation_date=tx.creation_date,
             malicious_data=", ".join(blacklisted_proxies).encode("utf-8"),
-            description="Detected a malicious IP address inside an XFF header."
+            metadata={
+                "description": "Detected a malicious IP address inside an XFF header",
+                "Anonymity": "Yes"
+            }
         )
         return True, log
 
     # ACCESS LOGGING: what about the port?
-    # ACCESS LOGGING: Update the real address of the tx.
-    if netloc := anet.convert_netloc(network_layers[0]):
-        tx.real_host_address = anet.HostAddress(*netloc)
+    if netloc := convert_netloc(network_layers[-1]):
+        tx.real_host_address = HostAddress(*netloc)
     return False, None
