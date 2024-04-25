@@ -1,5 +1,3 @@
-# https://adam-p.ca/blog/2022/03/x-forwarded-for - for a great XFF security decisions.
-
 import asyncio
 from src.net.aionetwork import create_new_task, convert_netloc, HostAddress
 from src.internal.system.transaction import Transaction

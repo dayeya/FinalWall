@@ -3,17 +3,19 @@ from fmt_time import get_unix_time
 
 import asyncio
 from socket import socket, AF_INET, SOCK_STREAM
+
+from src.proxy_network.acl import AccessList
 from src.proxy_network.behaviour import recv_from_client, forward_data, recv_from_server
 
 from conversion import encode
 from components import BlackList, Logger
 
 from net.connection import Connection
-from net.aionetwork import create_new_task, HostAddress
+from net.aionetwork import create_new_thread, create_new_task, HostAddress
 
 from internal.tokenization import tokenize
-from internal.system.checker import Checker
 from internal.database import SignaturesDB
+from internal.system.checker import Checker
 from internal.system.actions.block import build_block, build_redirect
 from internal.system.transaction import Transaction, SERVER_RESPONSE, CLIENT_REQUEST
 
@@ -93,8 +95,16 @@ async def main():
         SignaturesDB()
     except Exception as _database_loading_err:
         print("ERROR: Could not initialize database due:", _database_loading_err)
+
     waf = Waf()
-    await waf.start()
+    AccessList.api = waf.config.acl["api"]
+    AccessList.interval = waf.config.acl["refetch_interval"]
+
+    work = [
+        create_new_task(task_name="WAF_DEPLOYMENT", task=waf.start, args=()),
+        create_new_task(task_name="ACL_REFETCHING", task=AccessList.activity, args=())
+    ]
+    await asyncio.gather(*work)
 
 if __name__ == "__main__":
     import tracemalloc

@@ -5,9 +5,9 @@ The asyncio Network module provides simple async networking capabilities.
 
 import asyncio
 import ipaddress
+import threading
 from socket import socket
-from threading import Thread
-from typing import Tuple, Callable, Union, Optional
+from typing import Tuple, Callable, Union
 from dataclasses import dataclass
 
 type NETWORK_ADDRESS = Tuple[Union[ipaddress.IPv4Address, ipaddress.IPv6Address], int]
@@ -72,12 +72,12 @@ async def safe_send_recv(sock: socket, payload: bytes) -> bytes:
     return data
 
 
-def create_new_thread(func: Callable, *args: tuple) -> Thread:
+def create_new_thread(func: Callable, args: tuple, daemon: bool) -> threading.Thread:
     """
     Creates a local thread.
     :returns: Thread.
     """
-    return Thread(target=func, args=args)
+    return threading.Thread(target=func, args=args, daemon=daemon)
 
 
 def create_new_task(task_name: str, task: Callable, args: tuple) -> asyncio.Task:

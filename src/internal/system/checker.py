@@ -22,10 +22,10 @@ class Checker:
         xff, log = await validate_xff_ips(tx)
         if xff:
             return xff, log
-        unauthorized, log = self.__check_path(tx)
+        unauthorized, log = await self.__check_path(tx)
         if unauthorized:
             return unauthorized, log
-        sqli, log = self.__check_sql_injection(tx)
+        sqli, log = await self.__check_sql_injection(tx)
         if sqli:
             return sqli, log
 
@@ -41,7 +41,7 @@ class Checker:
         return contains_block(tx)
 
     @staticmethod
-    def __check_path(tx: Transaction) -> CheckResult:
+    async def __check_path(tx: Transaction) -> CheckResult:
         """
         Checks if the resource that the transaction was made for is authorized.
         """
@@ -61,7 +61,7 @@ class Checker:
             return False, None
 
     @staticmethod
-    def __check_sql_injection(tx: Transaction) -> CheckResult:
+    async def __check_sql_injection(tx: Transaction) -> CheckResult:
         """
         Processes the transaction and finds any SQL injection signatures.
         """

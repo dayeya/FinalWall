@@ -1,5 +1,7 @@
 # Author: Daniel Sapojnikov 2023.
-# This TOML file provides important network configuration for the system.
+# config.toml provides configurations for WAF deployment and capabilities.
+
+### Network Configurations
 
 [WebServer]
 ip = "127.0.0.1"
@@ -12,3 +14,9 @@ port = 8080
 [Admin]
 ip = "127.0.0.1"
 port = 60000
+
+### Further sections are related to WAF features.
+
+[ACL]
+api = "TorExitNodes.txt"
+refetch_interval = 1800 # 30 minutes
