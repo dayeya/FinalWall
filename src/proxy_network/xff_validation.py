@@ -6,7 +6,7 @@ from src.internal.system.transaction import Transaction
 from src.internal.system.logging import SecurityLog, AttackClassifier
 
 XFF_SEP = ","
-TRUSTED_PROXY_LIST = ["1.1.1.1"]
+TRUSTED_PROXY_LIST = []
 TRUSTED_PROXY_COUNT = None
 
 
