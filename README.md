@@ -19,6 +19,7 @@ NetGuard detects, monitors, and protects websites from the following web attacks
 - [ ] Handle file uploads and file attacks.
 - [ ] Rule system for attack detection.
 - [ ] Make NetGuard highly configurable.
+- [ ] Determination of severity.
 
 # Attack detection and prevention
 NetGuard uses built-in policies and rules to block malicious data. NetGuard supports dynamically added policies and uses whitelists and blacklists to strengthen its defensive capabilities.

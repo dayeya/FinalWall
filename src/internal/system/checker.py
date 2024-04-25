@@ -3,6 +3,7 @@ from typing import Tuple
 from src.internal.database import SignaturesDB
 from src.internal.system.transaction import Transaction
 from src.internal.system.actions.block import contains_block
+from src.proxy_network.xff_validation import validate_xff_ips
 from src.internal.system.logging import AttackClassifier, SecurityLog, AccessLog, LogType
 
 
@@ -18,16 +19,20 @@ class Checker:
         Checks `tx` for each attack and creates a log object (Can be either access or security).
         :returns: CheckResult holding if the transaction is malicious or not, and the log object itself.
         """
+        xff, log = await validate_xff_ips(tx)
+        if xff:
+            return xff, log
         unauthorized, log = await self.__check_path(tx)
         if unauthorized:
             return unauthorized, log
         sqli, log = await self.__check_sql_injection(tx)
         if sqli:
             return sqli, log
-        
+
+        print(tx)
         log = AccessLog(
-            ip=tx.owner.ip,
-            port=tx.owner.port,
+            ip=tx.real_host_address.ip if tx.real_host_address is not None else tx.owner.port,
+            port=tx.real_host_address.port if tx.real_host_address is not None else tx.owner.port,
             creation_date=tx.creation_date,
         )
         return False, log
@@ -50,7 +55,7 @@ class Checker:
                     ip=tx.owner.ip,
                     port=tx.owner.port,
                     creation_date=tx.creation_date,
-                    malicious_data=tx.url.path.decode()
+                    malicious_data=tx.url.path
                 )
                 return True, log
             return False, None
@@ -60,7 +65,6 @@ class Checker:
         """
         Processes the transaction and finds any SQL injection signatures.
         """
-
         def _check_keyword_in_pairs(value: str, _pairs: list) -> bool:
             single_pairs: set = set()
             multiple_pairs: set = set()

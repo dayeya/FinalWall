@@ -4,36 +4,28 @@ The asyncio Network module provides simple async networking capabilities.
 """
 
 import asyncio
+import ipaddress
 from socket import socket
 from threading import Thread
-from typing import Tuple, Callable, Union
+from typing import Tuple, Callable, Union, Optional
 from dataclasses import dataclass
 
-# Universal networking constants.
-null_ip = "0.0.0.0"
-loop_back = '127.0.0.1'
-
-
-@dataclass
-class Address:
-    ip: str
-    port: int
-
-
+type NETWORK_ADDRESS = Tuple[Union[ipaddress.IPv4Address, ipaddress.IPv6Address], int]
 type Safe_Send_Result = int
 type Safe_Recv_Result = Tuple[bytes, int]
 type FunctionResult = Union[Safe_Send_Result, Safe_Recv_Result]
 
+NETLOC_SEP = ":"
 
-def __safe_socket_operation(func: Callable, sock: socket, *args: tuple) -> FunctionResult:
-    """
-    Wrapper function to perform any socket operation.
-    :return: Result of the operation.
-    """
-    try:
-        return func(sock, *args)
-    except Exception as e:
-        print(f"Error while: {func.__name__} on socket: {sock.getsockname()}, {e}")
+
+@dataclass
+class HostAddress:
+    ip: str
+    port: int
+
+    def tuplize(self):
+        tup = (self.ip, self.port)
+        return tup
 
 
 async def safe_recv(sock: socket, buffer_size: int) -> Safe_Recv_Result:
@@ -41,43 +33,42 @@ async def safe_recv(sock: socket, buffer_size: int) -> Safe_Recv_Result:
     Waits for data from sock.
     :return: decoded data.
     """
-    async def recv_wrapper(_sock: socket, _loop: asyncio.AbstractEventLoop, buffer: int) -> Safe_Recv_Result:
-        try:
-            data = await _loop.sock_recv(_sock, buffer)
-        except asyncio.IncompleteReadError:
-            return b"", 1
-            
-        if len(data) == buffer:
-            while True:
-                try:
-                    data += await loop.sock_recv(sock, buffer)
-                except asyncio.IncompleteReadError:
-                    break
-        return data, 0
-
     loop = asyncio.get_event_loop()
-    return await __safe_socket_operation(recv_wrapper, sock, loop, buffer_size)
+    try:
+        data = await loop.sock_recv(sock, buffer_size)
+    except asyncio.IncompleteReadError:
+        return b"", 1
+
+    if len(data) == buffer_size:
+        while True:
+            try:
+                data += await loop.sock_recv(sock, buffer_size)
+            except asyncio.IncompleteReadError:
+                break
+    return data, 0
 
 
-async def safe_send(sock: socket, payload: bytes) -> None:
+async def safe_send(sock: socket, data: bytes) -> None:
     """
     Sends a payload from sock.
     :return: None.
     """
-    async def send_wrapper(sock: socket, loop: asyncio.AbstractEventLoop, payload: bytes) -> Safe_Send_Result:
-        return await loop.sock_sendall(sock, payload)
-    
-    loop = asyncio.get_event_loop()
-    await __safe_socket_operation(send_wrapper, sock, loop, payload)
+    try:
+        loop = asyncio.get_event_loop()
+        await loop.sock_sendall(sock, data)
+    except OSError:
+        print(f"ERROR: Could not send data to {sock}")
 
 
-async def safe_send_recv(sock: socket, payload: str) -> str:
+async def safe_send_recv(sock: socket, payload: bytes) -> bytes:
     """
     Sends a payload from sock and waits for an answer, using a safe operation.
     :return: Decoded answer.
     """
     await safe_send(sock, payload)
-    data = await safe_recv(sock)
+    data, err = await safe_recv(sock, buffer_size=8192)
+    if err:
+        print(f"SOCKET CLOSED {sock.getsockname()}")
     return data
 
 
@@ -89,9 +80,26 @@ def create_new_thread(func: Callable, *args: tuple) -> Thread:
     return Thread(target=func, args=args)
 
 
-def create_new_task(task_name:str, task: Callable, args: tuple) -> asyncio.Task:
+def create_new_task(task_name: str, task: Callable, args: tuple) -> asyncio.Task:
     """
     Creates a new task.
     :returns: Task.
     """
     return asyncio.create_task(name=task_name, coro=task(*args))
+
+
+def convert_netloc(netloc: str) -> Union[NETWORK_ADDRESS, None]:
+    try:
+        ip, sep, port = netloc.rpartition(NETLOC_SEP)
+        assert sep, AssertionError
+        return ipaddress.ip_address(ip), int(port)
+
+    except AssertionError:
+        # No port was specified.
+        try:
+            return ipaddress.ip_address(netloc), -1
+        except ValueError:
+            return None
+
+    except ValueError:
+        return None

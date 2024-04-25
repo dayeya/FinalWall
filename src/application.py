@@ -3,13 +3,13 @@ from fmt_time import get_unix_time
 
 import asyncio
 from socket import socket, AF_INET, SOCK_STREAM
-from src.proxy.proxy import recv_from_client, forward_data, recv_from_server
+from src.proxy_network.behaviour import recv_from_client, forward_data, recv_from_server
 
 from conversion import encode
 from components import BlackList, Logger
 
-from net.connection import Connection, establish_connection
-from net.aionetwork import create_new_task, Address
+from net.connection import Connection
+from net.aionetwork import create_new_task, HostAddress
 
 from internal.tokenization import tokenize
 from internal.system.checker import Checker
@@ -36,31 +36,33 @@ class Waf:
     async def __accept_client(self) -> Connection:
         loop = asyncio.get_event_loop()
         client, addr = await loop.sock_accept(self.__sock)
-        return Connection(client, Address(*addr))
-
-    @staticmethod
-    def new_transaction(owner: Address, data: bytes, side: int, creation_date) -> Transaction:
-        return Transaction(owner=owner, creation_date=creation_date, raw=data, side=side)
+        return Connection(client, HostAddress(*addr))
 
     async def __handle_connection(self, client: Connection) -> None:
         ip, port = self.config.webserver["ip"], self.config.webserver["port"]
-        server = await establish_connection(target=(ip, port))
+        server = Connection(socket(AF_INET, SOCK_STREAM), HostAddress(ip, port))
+        await server.establish()
         request, err = await recv_from_client(client)
         if err:
             self.logger.error(f"Failed request.")
 
-        tx = self.new_transaction(client.address, request, CLIENT_REQUEST, creation_date=get_unix_time())
+        # real_host_address and has_proxies are evaluated at inspection time.
+        tx = Transaction(
+            owner=client.addr,
+            real_host_address=None,
+            has_proxies=False,
+            raw=request,
+            side=CLIENT_REQUEST,
+            creation_date=get_unix_time()
+        )
         tx.process()
 
-        # Check for malicious transaction.
         valid_transaction, log_object = await self.checker.check_transaction(tx)
         if valid_transaction:
             token = tokenize()
             location = encode("/block?token=" + token)
             redirection = build_redirect(location)
             await forward_data(client, redirection)
-
-            # Log the alert (Security log)
             print(log_object)
 
         elif token := self.checker.contains_block(tx):
@@ -79,7 +81,7 @@ class Waf:
         while True:
             client = await self.__accept_client()
             task = create_new_task(
-                task_name=f"{client.host_addr} Handler",
+                task_name=f"HANDLE_CONNECTION({client.addr})",
                 task=self.__handle_connection,
                 args=(client,),
             )
@@ -95,4 +97,7 @@ async def main():
     await waf.start()
 
 if __name__ == "__main__":
+    import tracemalloc
+
+    tracemalloc.start()
     asyncio.run(main())

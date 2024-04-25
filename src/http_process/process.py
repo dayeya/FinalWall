@@ -2,13 +2,10 @@
 Author: Daniel Sapojnikov 2023.
 http functions module.
 """
-import os
-import re
-import sys
 import base64
-from typing import Any, Tuple
 from dataclasses import dataclass
 from email.parser import BytesParser
+from typing import Any, Iterable, Union
 from urllib.parse import urlparse, parse_qs, unquote, unquote_to_bytes, ParseResult
 
 HS = b":"
@@ -17,17 +14,17 @@ CR = b"\r"
 LF = b"\n"
 CRLF = b"\r\n"
 BODY_SEPARATOR = b"\r\n\r\n"
+IP_OCTET_SEPARATOR = "."
+PORT_SEPERATOR = ":"
 
 PARAM_START = b"?"
 PARAM_SEPARATOR = b"&"
 PARAM_EQUALS = b"="
 
-# Header searching ; TODO: Make it perform better.
-
 
 @dataclass(slots=True)
 class Context:
-    inner: bytes
+    name: bytes
     default: Any
 
 
@@ -42,25 +39,32 @@ def contains_body_seperator(request: bytes) -> bool:
 
 
 def search_header(request: bytes, context: Context) -> bytes | Any:
-    offset = len(context.inner)
+    offset = len(context.name)
     for line in request.split(CRLF):
-        if (idx := line.find(context.inner)) >= 0:
-            data = line[idx+offset:]
+        if (idx := line.find(context.name)) >= 0:
+            data = line[idx + offset:]
             return data.strip()
     return context.default
 
 
-def decode_any_encoding(data: bytes) -> str:
-    decoded = ""
-    try:
-        decoded: str = unquote(data)
-    except Exception as _url_decoding_err:
-        pass
-    try:
-        decoded: str = str(base64.b64decode(decoded), encoding="utf-8")
-    except Exception as _64_decoding_err:
-        pass
-    return decoded
+def decode_any_encoding(data: Union[bytes, Iterable[bytes]]) -> Union[str, Iterable[str]]:
+    def _decode_datagram(datagram: bytes) -> str:
+        decoded = ""
+        try:
+            decoded: str = unquote(datagram)
+        except Exception as _url_decoding_err:
+            pass
+        try:
+            decoded: str = str(base64.b64decode(decoded), encoding="utf-8")
+        except Exception as _64_decoding_err:
+            pass
+        return decoded
+
+    if isinstance(data, str):
+        return data
+    if isinstance(data, bytes):
+        return _decode_datagram(data)
+    return [_decode_datagram(datagram) for datagram in data]
 
 
 def process_request_line(request: bytes) -> tuple:
@@ -71,10 +75,9 @@ def process_request_line(request: bytes) -> tuple:
 
 
 def process_header(header: bytes) -> tuple:
-    if HS in header:
-        field_name, field_value = header.split(HS, maxsplit=1)
-        return field_name, field_value.rstrip()
-    return header, b"not found"
+    field_name, sep, field_value = header.rpartition(HS)
+    assert sep  # b":" Must be present.
+    return field_name, field_value.rstrip()
 
 
 def process_headers_and_body(request: bytes) -> tuple:
@@ -86,12 +89,12 @@ def process_headers_and_body(request: bytes) -> tuple:
 
 def process_query(query: bytes) -> dict:
     """
-    Creates a processed dictionary out of a raw byte stream.
+    Creates a processed dictionary out of raw.
     Handles all implemented encoding schemes.
     """
-    def _process_query(kv: tuple) -> tuple:
-        return decode_any_encoding(kv[0]), map(decode_any_encoding, kv[1])
+    def _decode_query(field: bytes, values: Iterable[bytes]) -> tuple[str, Iterable[str]]:
+        return decode_any_encoding(field), list(map(decode_any_encoding, values))
 
     params: dict = parse_qs(query, strict_parsing=True)
-    decoded_params: dict = dict(map(_process_query, params.items()))
+    decoded_params: dict = dict(map(lambda item: _decode_query(*item), params.items()))
     return decoded_params

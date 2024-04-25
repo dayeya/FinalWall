@@ -1,7 +1,8 @@
-from src.net.aionetwork import Address
-from urllib.parse import ParseResultBytes
+from typing import Union
 from dataclasses import dataclass, field
-from src.http_tools.tools import process_request_line, process_headers_and_body, process_query
+from urllib.parse import ParseResultBytes
+from src.net.aionetwork import HostAddress
+from src.http_process.process import process_request_line, process_headers_and_body, process_query
 
 
 SERVER_RESPONSE = 0
@@ -31,11 +32,13 @@ class Transaction:
     """
     Creates a signature of each HTTP request.
     """
-    owner: Address
+    owner: HostAddress
+    real_host_address: Union[HostAddress, None]
+    has_proxies: bool
     creation_date: str
     raw: bytes
     side: int
-    id: str = ""
+    id: int = 0
     method: bytes = Method.GET
     url: ParseResultBytes = None
     version: bytes = b""
@@ -53,7 +56,7 @@ class Transaction:
     
     def __create_transaction_id(self) -> None:
         # TODO: Create a unique transaction id based on some parameters.
-        pass
+        self.id = hash(repr(self))
     
     def __process_message(self) -> None:
         self.headers, self.body = process_headers_and_body(self.raw)

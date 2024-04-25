@@ -1,6 +1,6 @@
 from src.net.connection import Connection
 from src.net.aionetwork import Safe_Recv_Result
-from src.http_tools import SearchContext, search_header, contains_body_seperator
+from src.http_process import SearchContext, search_header, contains_body_seperator
 
 
 async def recv_from_server(server: Connection) -> Safe_Recv_Result:
