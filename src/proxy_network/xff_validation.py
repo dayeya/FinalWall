@@ -28,8 +28,13 @@ async def validate_xff_ips(tx: Transaction):
         return False, None
 
     network_layers = [layer.strip() for layer in tx.headers[b"X-Forwarded-For"].decode().split(XFF_SEP)]
-    work = [anet.create_new_task(task_name=f"VALIDATION({ip})", task=_validate_ip_address, args=(ip,))
-            for ip in network_layers]
+    work = [
+        anet.create_new_task(
+            task_name=f"VALIDATION({ip})",
+            task=_validate_ip_address,
+            args=(ip,)
+        ) for ip in network_layers
+    ]
     results = await asyncio.gather(*work)
     blacklisted_proxies = list(filter(None, results))
 
@@ -47,6 +52,5 @@ async def validate_xff_ips(tx: Transaction):
     # ACCESS LOGGING: what about the port?
     # ACCESS LOGGING: Update the real address of the tx.
     if netloc := anet.convert_netloc(network_layers[0]):
-        ip, port = netloc
-        tx.real_host_address = anet.HostAddress(ip, port)
+        tx.real_host_address = anet.HostAddress(*netloc)
     return False, None
