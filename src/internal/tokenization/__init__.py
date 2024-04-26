@@ -1,1 +1,1 @@
-from .gen_token import tokenize
+from .event_token import tokenize

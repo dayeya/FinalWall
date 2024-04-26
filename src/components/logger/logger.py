@@ -1,5 +1,4 @@
 import logging
-from src.fmt_time import date_formatted_data
 
 FORMAT = "%(levelname)s: %(message)s"
 
@@ -14,9 +13,6 @@ class Logger(logging.Logger):
         stdio_handler.setFormatter(self.__formatter)
         
         self.addHandler(stdio_handler)
-        
-    def log_date(self, data: str) -> None:
-        self.info(date_formatted_data(data))
         
     def set_format(self, fmt: str) -> None:
         self.__formatter = logging.Formatter(fmt)

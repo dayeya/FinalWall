@@ -18,5 +18,8 @@ port = 60000
 ### Further sections are related to WAF features.
 
 [ACL]
-api = "TorExitNodes.txt"
+api = "C:\\coding\\NetGuard\\src\\proxy_network\\TorExitNodes.txt"
 refetch_interval = 1800 # 30 minutes
+
+[Timezone]
+time_zone = "Asia/Jerusalem"

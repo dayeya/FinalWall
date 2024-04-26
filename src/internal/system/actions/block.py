@@ -1,6 +1,5 @@
 import re
 from pathlib import Path
-from src.conversion import encode
 from urllib.parse import urlunparse
 from jinja2 import Environment, FileSystemLoader
 from src.internal.system.transaction import Transaction, Method
@@ -44,7 +43,7 @@ def build_block(token: str) -> bytes:
     security_page: bytes = _push_args_into_template(token)
     block_html = b"HTTP/1.1 200 OK\r\n"
     block_html += b"Content-Type: text/html; charset=utf-8\r\n"
-    block_html += b"Content-Length: " + encode(str(len(security_page))) + b"\r\n"
+    block_html += b"Content-Length: " + str(len(security_page)).encode("utf-8") + b"\r\n"
     block_html += b"Connection: close\r\n\r\n"
     block_html += security_page
     return block_html
