@@ -30,7 +30,11 @@ class Parser:
 @dataclass(slots=True)
 class Transaction:
     """
-    Creates a signature of each HTTP request.
+    Creates a Transaction object representing each event in the system.
+    Notes:
+        real_host_address - `True-Client-IP`, refers to the TRUSTED source of the packet.
+        has_proxies - If the packet was forwarded through proxies.
+        *BOTH* are evaluated at Inspection time (Checker).
     """
     owner: HostAddress
     real_host_address: Union[HostAddress, None]
@@ -55,7 +59,6 @@ class Transaction:
         self.method, self.url, self.version = process_request_line(self.raw)
     
     def __create_transaction_id(self) -> None:
-        # TODO: Create a unique transaction id based on some parameters.
         self.id = hash(repr(self))
     
     def __process_message(self) -> None:
@@ -76,7 +79,6 @@ class Transaction:
     def __process_params(self) -> None:
         """
         Processes the params either of the URL or the body.
-        TODO: Parse the data before processing it.
         """
         if self.method == Method.GET:
             self.query_params = process_query(self.url.query)
@@ -85,12 +87,12 @@ class Transaction:
             query_params = process_query(self.url.query)
             self.query_params = body_params | query_params
         if self.method == Method.PUT:
-            assert False, "Not implemented."
+            raise NotImplementedError
         if self.method == Method.DELETE:
-            assert False, "Not implemented."
+            raise NotImplementedError
         if self.method == Method.HEAD: 
-            assert False, "Not implemented."
+            raise NotImplementedError
         if self.method == Method.TRACE:
-            assert False, "Not implemented."
+            raise NotImplementedError
         if self.method == Method.OPTIONS:
-            assert False, "Not implemented."
+            raise NotImplementedError

@@ -1,7 +1,7 @@
 import json
+from enum import Enum
 from pathlib import Path
 from src.components import Singleton
-
 
 ROOT_FOLDER = "signatures"
 
@@ -28,6 +28,7 @@ def _load_unauthorized_data() -> list:
 
 
 def _load_json_file(json_file: str) -> dict:
+    # TODO: Handle exceptions.
     try:
         path = abs_node_path(ROOT_FOLDER).joinpath(json_file)
         with open(path, "r") as json_data:
@@ -36,13 +37,22 @@ def _load_json_file(json_file: str) -> dict:
         raise _e
 
 
+class _DbState(Enum):
+    EMPTY = "Empty"
+    LOADED = "Loaded"
+
+
 class SignaturesDB(Singleton):
+    state: _DbState = _DbState.EMPTY
+
     def __init__(self) -> None:
-        self.sql_data_set: dict = _load_json_file("sql_data.json")
-        self.xss_data_set: dict = _load_json_file("xss_data.json")
-        self.unauthorized_access_data_set: list = _load_unauthorized_data()
+        if not SignaturesDB.state == _DbState.LOADED:
+            self.sql_data_set: dict = _load_json_file("sql_data.json")
+            self.xss_data_set: dict = _load_json_file("xss_data.json")
+            self.unauthorized_access_data_set: list = _load_unauthorized_data()
 
 
 SIGNATURE_DB = SignaturesDB()
+SignaturesDB.state = _DbState.LOADED
 
 __all__ = ["SIGNATURE_DB"]

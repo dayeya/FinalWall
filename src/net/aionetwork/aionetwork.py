@@ -6,70 +6,58 @@ The asyncio Network module provides simple async networking capabilities.
 import asyncio
 import ipaddress
 import threading
-from socket import socket
-from typing import Tuple, Callable, Union
 from dataclasses import dataclass
+from typing import Tuple, Callable, Union, Self
 
 type NETWORK_ADDRESS = Tuple[Union[ipaddress.IPv4Address, ipaddress.IPv6Address], int]
 type Safe_Send_Result = int
 type Safe_Recv_Result = Tuple[bytes, int]
 type FunctionResult = Union[Safe_Send_Result, Safe_Recv_Result]
 
-NETLOC_SEP = ":"
+REMOTE_ADDR = "peername"
+SOCKET = "socket"
+SOCKNAME = "sockname"
 
 
-@dataclass
+@dataclass(slots=True)
 class HostAddress:
     ip: str
     port: int
 
-    def tuplize(self):
-        tup = (self.ip, self.port)
-        return tup
 
+class AsyncStream:
+    _BUFFER_SIZE = 8192
 
-async def safe_recv(sock: socket, buffer_size: int) -> Safe_Recv_Result:
-    """
-    Waits for data from sock.
-    :return: decoded data.
-    """
-    loop = asyncio.get_event_loop()
-    try:
-        data = await loop.sock_recv(sock, buffer_size)
-    except asyncio.IncompleteReadError:
-        return b"", 1
+    def __init__(self, reader: asyncio.StreamReader=None, writer: asyncio.StreamWriter=None):
+        self.__reader = reader
+        self.__writer = writer
 
-    if len(data) == buffer_size:
+    async def write(self, data: bytes):
+        self.__writer.write(data)
+        await self.__writer.drain()
+
+    async def close(self):
+        self.__writer.close()
+        await self.__writer.wait_closed()
+
+    @classmethod
+    async def open_stream(cls, ip: str, port: int) -> Self:
+        try:
+            reader, writer = await asyncio.open_connection(host=ip, port=port)
+            return cls(reader, writer)
+        except OSError:
+            print("ERROR: could not connect to the server")
+            return cls(None, None)
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self) -> bytes:
         while True:
-            try:
-                data += await loop.sock_recv(sock, buffer_size)
-            except asyncio.IncompleteReadError:
-                break
-    return data, 0
-
-
-async def safe_send(sock: socket, data: bytes) -> None:
-    """
-    Sends a payload from sock.
-    :return: None.
-    """
-    try:
-        loop = asyncio.get_event_loop()
-        await loop.sock_sendall(sock, data)
-    except OSError:
-        print(f"ERROR: Could not send data to {sock}")
-
-
-async def safe_send_recv(sock: socket, payload: bytes) -> bytes:
-    """
-    Sends a payload from sock and waits for an answer, using a safe operation.
-    :return: Decoded answer.
-    """
-    await safe_send(sock, payload)
-    data, err = await safe_recv(sock, buffer_size=8192)
-    if err:
-        print(f"SOCKET CLOSED {sock.getsockname()}")
-    return data
+            data = await self.__reader.read(n=AsyncStream._BUFFER_SIZE)
+            if not data:
+                raise StopAsyncIteration
+            return data
 
 
 def create_new_thread(func: Callable, args: tuple, daemon: bool) -> threading.Thread:
@@ -90,7 +78,7 @@ def create_new_task(task_name: str, task: Callable, args: tuple) -> asyncio.Task
 
 def convert_netloc(netloc: str) -> Union[NETWORK_ADDRESS, None]:
     try:
-        ip, sep, port = netloc.rpartition(NETLOC_SEP)
+        ip, sep, port = netloc.rpartition(":")
         assert sep, AssertionError
         return ipaddress.ip_address(ip), int(port)
 

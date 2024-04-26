@@ -11,20 +11,32 @@ class AccessList:
     @staticmethod
     def fetch_anonymous_proxies():
         """
-        Until my router is fixed I will use a hard-coded list of ips.
+        response = requests.get(AccessList.api)
+        if response.status_code != 200:
+            raise RuntimeError(f"ACL.{AccessList.fetch_anonymous_proxies.__name__} failed")
+        AccessList.acl = response.text
+        print("Fetched!")
         """
-        with open(AccessList.api, "r") as data:
-            exit_nodes = data.readlines()
-            AccessList.acl = exit_nodes
+        with open(AccessList.api, "r") as exit_nodes:
+            AccessList.acl = exit_nodes.readlines()
 
     @staticmethod
-    async def activity():
+    async def activity_loop(max_retries=10):
         """
-        Refreshes the ACL every interval.
+        Activity loop of refetching the Tor exit nodes.
         """
+        tries = 0
         while True:
             await asyncio.sleep(AccessList.interval)
-            AccessList.fetch_anonymous_proxies()
+            try:
+                AccessList.fetch_anonymous_proxies()
+            except RuntimeError as e:
+                if tries <= max_retries:
+                    tries += 1
+                    print(f"{e}, retrying")
+                    continue
+                break
+        raise Exception("Reached loop limit, check for API connection")
 
     def __contains__(self, ip):
         return ip in AccessList.acl

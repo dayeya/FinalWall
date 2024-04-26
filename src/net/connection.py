@@ -1,35 +1,37 @@
-import asyncio
-from socket import socket
+from typing import Callable
 from dataclasses import dataclass
-from src.net.aionetwork import safe_send, safe_recv, HostAddress
+from src.net.aionetwork import AsyncStream, HostAddress
 
 
 @dataclass(slots=True)
 class Connection:
-    sock: socket
+    stream: AsyncStream
     addr: HostAddress
 
-    async def establish(self):
+    async def recv_until(self, condition: Callable, args: tuple) -> bytes:
         """
-        Establish the connection completely, this happens after __init__.
-        """
-        try:
-            loop = asyncio.get_event_loop()
-            await loop.sock_connect(self.sock, self.addr.tuplize())
-        except OSError:
-            print(f"ERROR: Could not establish connection with {self.addr}")
+        Recv data until a condition is met.
+        The first argument of `condition` is ALWAYS data.
 
-    async def recv(self) -> bytes:
-        data, err = await safe_recv(self.sock, buffer_size=8192)
-        if err:
-            self.close()
+        This function is not a replacement of:
+
+            async for chunk in connection.stream:
+                data += chunk
+
+        Instead, Connection.recv_until serves as a conditional recv behaviour.
+        """
+        data = b""
+        async for chunk in self.stream:
+            data += chunk
+            if condition(data, *args):
+                break
         return data
 
-    async def send(self, data: bytes) -> None:
-        await safe_send(self.sock, data)
+    async def write(self, data: bytes) -> None:
+        await self.stream.write(data)
 
     def close(self) -> None:
-        self.sock.close()
+        self.stream.close()
 
     def __hash__(self) -> int:
-        return hash((self.sock, self.addr))
+        return hash(repr(self))
