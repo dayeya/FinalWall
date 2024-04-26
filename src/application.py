@@ -120,7 +120,7 @@ class Waf:
     async def restart(self):
         if self.__state is not _WafState.CLOSED:
             raise StateError("Instance is not closed")
-        asyncio.run(self.deploy())
+        await self.deploy()
         await self.work()
 
     async def close(self):
