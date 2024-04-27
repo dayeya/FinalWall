@@ -1,1 +1,1 @@
-from .db import SignaturesDB
+from .db import *

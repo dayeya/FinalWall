@@ -1,13 +1,13 @@
 from typing import Type
-from collections import defaultdict
 
 Inheritor = Type[object]
 
 
-class Singleton(object):
-    _instance = defaultdict(object)
+class Singleton(type):
+    _instances = {}
 
-    def __new__(cls, *args, **kwargs):
-        if not isinstance(Singleton._instance[cls], cls):
-            Singleton._instance[cls] = super().__new__(cls, *args, **kwargs)
-        return Singleton._instance[cls]
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(type(cls), cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+

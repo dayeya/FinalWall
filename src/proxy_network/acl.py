@@ -1,36 +1,40 @@
 import asyncio
+import requests
 from dataclasses import dataclass
+from src.exceptions import AclFetchError, AclBackUpError
 
 
 @dataclass(slots=True)
 class AccessList:
+    main_list: list
     api: str
-    acl: list
     interval: int
+    backup: str
 
-    @staticmethod
-    def fetch_anonymous_proxies():
-        """
-        response = requests.get(AccessList.api)
-        if response.status_code != 200:
-            raise RuntimeError(f"ACL.{AccessList.fetch_anonymous_proxies.__name__} failed")
-        AccessList.acl = response.text
-        print("Fetched!")
-        """
-        with open(AccessList.api, "r") as exit_nodes:
-            AccessList.acl = exit_nodes.readlines()
+    def fetch_anonymous_proxies(self):
+        try:
+            response = requests.get(AccessList.api)
+            if response.status_code != 200:
+                raise AclFetchError(f"ACL.{AccessList.fetch_anonymous_proxies.__name__} failed")
+            self.main_list = response.text.split("\n")
 
-    @staticmethod
-    async def activity_loop(max_retries=10):
+        except AclFetchError:
+            try:
+                with open(AccessList.backup, "r") as exit_nodes:
+                    self.main_list = exit_nodes.readlines()
+            except FileNotFoundError:
+                raise AclBackUpError("Backup is not available. Please check config.toml for ACL.backup")
+
+    async def activity_loop(self, max_retries=10):
         """
         Activity loop of refetching the Tor exit nodes.
         """
         tries = 0
         while True:
-            await asyncio.sleep(AccessList.interval)
+            await asyncio.sleep(self.interval)
             try:
-                AccessList.fetch_anonymous_proxies()
-            except RuntimeError as e:
+                self.fetch_anonymous_proxies()
+            except (AclFetchError, AclBackUpError) as e:
                 if tries <= max_retries:
                     tries += 1
                     print(f"{e}, retrying")
@@ -39,4 +43,4 @@ class AccessList:
         raise Exception("Reached loop limit, check for API connection")
 
     def __contains__(self, ip):
-        return ip in AccessList.acl
+        return ip in AccessList.main_list

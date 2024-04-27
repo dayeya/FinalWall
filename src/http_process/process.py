@@ -73,7 +73,7 @@ def process_request_line(request: bytes) -> tuple:
 def process_header(header: bytes) -> tuple:
     field_name, sep, field_value = header.rpartition(HS)
     assert sep  # b":" Must be present.
-    return field_name, field_value.rstrip()
+    return field_name, field_value.strip()
 
 
 def process_headers_and_body(request: bytes) -> tuple:

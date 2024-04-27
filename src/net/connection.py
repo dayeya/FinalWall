@@ -5,6 +5,9 @@ from .aionetwork import AsyncStream, HostAddress
 
 @dataclass(slots=True)
 class Connection:
+    """
+    A class representing a connection over the network.
+    """
     stream: AsyncStream
     addr: HostAddress
 
@@ -18,7 +21,8 @@ class Connection:
             async for chunk in connection.stream:
                 data += chunk
 
-        Instead, Connection.recv_until serves as a conditional recv behaviour.
+        Instead, Connection.recv_until serves as a conditional recv behavior.
+        :return: bytes
         """
         data = b""
         async for chunk in self.stream:
@@ -27,10 +31,19 @@ class Connection:
                 break
         return data
 
-    async def write(self, data: bytes) -> None:
+    async def write(self, data: bytes):
+        """
+        Writes data to the stream.
+        :param data:
+        :return:
+        """
         await self.stream.write(data)
 
-    def close(self) -> None:
+    def close(self):
+        """
+        Closes the stream.
+        :return:
+        """
         self.stream.close()
 
     def __hash__(self) -> int:

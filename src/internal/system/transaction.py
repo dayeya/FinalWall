@@ -57,7 +57,7 @@ class Transaction:
     
     def __process_request_line(self) -> None:
         self.method, self.url, self.version = process_request_line(self.raw)
-    
+
     def __create_transaction_id(self) -> None:
         self.id = hash(repr(self))
     

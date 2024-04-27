@@ -18,11 +18,17 @@ SOCKNAME = "sockname"
 
 @dataclass(slots=True)
 class HostAddress:
+    """
+    A class representing hosts on the network.
+    """
     ip: str
     port: int
 
 
 class AsyncStream:
+    """
+    A class representing an asynchronous stream (part of Connection class).
+    """
     _BUFFER_SIZE = 8192
 
     def __init__(self, reader: asyncio.StreamReader=None, writer: asyncio.StreamWriter=None):
@@ -43,7 +49,7 @@ class AsyncStream:
             reader, writer = await asyncio.open_connection(host=ip, port=port)
             return cls(reader, writer)
         except OSError:
-            print("ERROR: could not connect to the server")
+            print("ERROR: could not connect to the given ip and port.")
             return cls(None, None)
 
     def __aiter__(self):
@@ -64,15 +70,22 @@ def create_new_thread(func: Callable, args: tuple, daemon: bool) -> threading.Th
     return threading.Thread(target=func, args=args, daemon=daemon)
 
 
-def create_new_task(task_name: str, task: Callable, args: tuple) -> asyncio.Task:
+def create_new_task(task_name: str=None, task: Callable=None, args: tuple=()) -> asyncio.Task:
     """
     Creates a new task.
     :returns: Task.
     """
+    if not task_name:
+        task_name = f"TASK_NAME_{task.__name__}"
     return asyncio.create_task(name=task_name, coro=task(*args))
 
 
 def convert_netloc(netloc: str) -> Union[Network_Address, None]:
+    """
+    Converts a netloc to a *real* netloc from ipaddress and checks if it's valid.
+    :param netloc: either an ip_address of ip_address:port
+    :return:
+    """
     try:
         ip, sep, port = netloc.rpartition(":")
         assert sep, AssertionError
@@ -93,5 +106,6 @@ __all__ = [
     "HostAddress",
     "AsyncStream",
     "create_new_task",
-    "convert_netloc"
+    "convert_netloc",
+    "REMOTE_ADDR"
 ]

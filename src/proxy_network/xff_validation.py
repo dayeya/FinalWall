@@ -1,7 +1,10 @@
 import asyncio
-from src.net.aionetwork import create_new_task, convert_netloc, HostAddress
+
+from src.internal.system.check_types import CheckResult
 from src.internal.system.transaction import Transaction
 from src.internal.system.logging import SecurityLog, AttackClassifier
+
+from src.net.aionetwork import create_new_task, convert_netloc, HostAddress
 
 XFF_SEP = ","
 TRUSTED_PROXY_LIST = []
@@ -19,11 +22,11 @@ async def _validate_ip_address(ip: str):
     return ip if not valid else None
 
 
-async def validate_xff_ips(tx: Transaction):
+async def validate_xff_ips(tx: Transaction) -> CheckResult:
     tx.has_proxies = behind_proxy(tx)
     if not tx.has_proxies:
         tx.real_host_address = tx.owner
-        return False, None
+        return CheckResult(result=False, log=None)
 
     network_layers = [layer.strip() for layer in tx.headers[b"X-Forwarded-For"].decode().split(XFF_SEP)]
     work = [
@@ -48,9 +51,9 @@ async def validate_xff_ips(tx: Transaction):
                 "Anonymity": "Yes"
             }
         )
-        return True, log
+        return CheckResult(result=True, log=log)
 
-    # ACCESS LOGGING: what about the port?
     if netloc := convert_netloc(network_layers[-1]):
         tx.real_host_address = HostAddress(*netloc)
-    return False, None
+
+    return CheckResult(result=False, log=None)

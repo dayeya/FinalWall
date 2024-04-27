@@ -28,31 +28,54 @@ def _load_unauthorized_data() -> list:
 
 
 def _load_json_file(json_file: str) -> dict:
-    # TODO: Handle exceptions.
+    path: Path = Path()
     try:
         path = abs_node_path(ROOT_FOLDER).joinpath(json_file)
         with open(path, "r") as json_data:
             return json.load(json_data)
-    except Exception as _e:
-        raise _e
+    except FileNotFoundError:
+        raise FileNotFoundError(
+            f"{json_file} not found at {path}. Double check the given file."
+        )
 
 
-class _DbState(Enum):
+class DbState(Enum):
     EMPTY = "Empty"
     LOADED = "Loaded"
 
 
-class SignaturesDB(Singleton):
-    state: _DbState = _DbState.EMPTY
+class _BaseDb:
+    _state: DbState = DbState.EMPTY
 
     def __init__(self) -> None:
-        if not SignaturesDB.state == _DbState.LOADED:
-            self.sql_data_set: dict = _load_json_file("sql_data.json")
-            self.xss_data_set: dict = _load_json_file("xss_data.json")
-            self.unauthorized_access_data_set: list = _load_unauthorized_data()
+        if _BaseDb._state is DbState.LOADED:
+            return
+        self.sql_data_set: dict = _load_json_file("sql_data.json")
+        self.xss_data_set: dict = _load_json_file("xss_data.json")
+        self.unauthorized_access_data_set: list = _load_unauthorized_data()
+        _BaseDb._state = DbState.LOADED
+
+    @classmethod
+    def get_state(cls):
+        return cls._state
+
+    @classmethod
+    def set_state(cls, state: DbState):
+        if not isinstance(state, DbState):
+            raise ValueError(
+                f"Invalid argument type for {cls.set_state.__name__}. Expected DbState, got {type(state).__name__}."
+            )
+        cls._state = state
 
 
-SIGNATURE_DB = SignaturesDB()
-SignaturesDB.state = _DbState.LOADED
+class SignatureDb(_BaseDb, metaclass=Singleton):
+    """
+    Singleton database object.
+    """
+    pass
 
-__all__ = ["SIGNATURE_DB"]
+
+__all__ = [
+    "SignatureDb",
+    "DbState"
+]
