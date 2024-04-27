@@ -13,14 +13,14 @@ class AccessList:
 
     def fetch_anonymous_proxies(self):
         try:
-            response = requests.get(AccessList.api)
+            response = requests.get(self.api)
             if response.status_code != 200:
                 raise AclFetchError(f"ACL.{AccessList.fetch_anonymous_proxies.__name__} failed")
             self.main_list = response.text.split("\n")
 
         except AclFetchError:
             try:
-                with open(AccessList.backup, "r") as exit_nodes:
+                with open(self.backup, "r") as exit_nodes:
                     self.main_list = exit_nodes.readlines()
             except FileNotFoundError:
                 raise AclBackUpError("Backup is not available. Please check config.toml for ACL.backup")
