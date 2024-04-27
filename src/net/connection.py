@@ -1,6 +1,6 @@
 from typing import Callable
 from dataclasses import dataclass
-from src.net.aionetwork import AsyncStream, HostAddress
+from .aionetwork import AsyncStream, HostAddress
 
 
 @dataclass(slots=True)

@@ -3,7 +3,7 @@ from enum import Enum
 from src.exceptions import StateError, VersionError
 
 from src.proxy_network.acl import AccessList
-from src.proxy_network.behaviour import recv_from_client, forward_data, recv_from_server
+from src.proxy_network.behavior import recv_from_client, forward_data, recv_from_server
 
 from config import Config
 from date import get_unix_time

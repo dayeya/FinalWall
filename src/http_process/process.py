@@ -17,10 +17,6 @@ BODY_SEPARATOR = b"\r\n\r\n"
 IP_OCTET_SEPARATOR = "."
 PORT_SEPERATOR = ":"
 
-PARAM_START = b"?"
-PARAM_SEPARATOR = b"&"
-PARAM_EQUALS = b"="
-
 
 @dataclass(slots=True)
 class Context:

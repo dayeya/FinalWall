@@ -9,10 +9,7 @@ import threading
 from dataclasses import dataclass
 from typing import Tuple, Callable, Union, Self
 
-type NETWORK_ADDRESS = Tuple[Union[ipaddress.IPv4Address, ipaddress.IPv6Address], int]
-type Safe_Send_Result = int
-type Safe_Recv_Result = Tuple[bytes, int]
-type FunctionResult = Union[Safe_Send_Result, Safe_Recv_Result]
+type Network_Address = Tuple[Union[ipaddress.IPv4Address, ipaddress.IPv6Address], int]
 
 REMOTE_ADDR = "peername"
 SOCKET = "socket"
@@ -53,11 +50,10 @@ class AsyncStream:
         return self
 
     async def __anext__(self) -> bytes:
-        while True:
-            data = await self.__reader.read(n=AsyncStream._BUFFER_SIZE)
-            if not data:
-                raise StopAsyncIteration
-            return data
+        data = await self.__reader.read(n=AsyncStream._BUFFER_SIZE)
+        if not data:
+            raise StopAsyncIteration
+        return data
 
 
 def create_new_thread(func: Callable, args: tuple, daemon: bool) -> threading.Thread:
@@ -76,7 +72,7 @@ def create_new_task(task_name: str, task: Callable, args: tuple) -> asyncio.Task
     return asyncio.create_task(name=task_name, coro=task(*args))
 
 
-def convert_netloc(netloc: str) -> Union[NETWORK_ADDRESS, None]:
+def convert_netloc(netloc: str) -> Union[Network_Address, None]:
     try:
         ip, sep, port = netloc.rpartition(":")
         assert sep, AssertionError
@@ -91,3 +87,11 @@ def convert_netloc(netloc: str) -> Union[NETWORK_ADDRESS, None]:
 
     except ValueError:
         return None
+
+
+__all__ = [
+    "HostAddress",
+    "AsyncStream",
+    "create_new_task",
+    "convert_netloc"
+]

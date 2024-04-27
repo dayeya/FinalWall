@@ -1,6 +1,6 @@
 from enum import StrEnum
 from typing import Union
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 # TODO Make logging as one file or DB.
@@ -9,6 +9,7 @@ class AttackClassifier(StrEnum):
     UNAUTHORIZED_ACCESS = "Unauthorized Access"
     SQL_INJECTION = "SQL Injection"
     IP_SPOOFING = "IP Spoofing"
+
 
 @dataclass(slots=True)
 class LogSettings:
