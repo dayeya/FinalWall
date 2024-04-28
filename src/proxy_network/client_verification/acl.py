@@ -1,11 +1,14 @@
 import asyncio
 import requests
 from dataclasses import dataclass
-from src.exceptions import AclFetchError, AclBackUpError
+from src.waf_err import AclFetchError, AclBackUpError
 
 
 @dataclass(slots=True)
 class AccessList:
+    """
+    A class representing a list of ip addresses of untrusted proxies.
+    """
     main_list: list
     api: str
     interval: int
@@ -43,4 +46,4 @@ class AccessList:
         raise Exception("Reached loop limit, check for API connection")
 
     def __contains__(self, ip):
-        return ip in AccessList.main_list
+        return ip in self.main_list

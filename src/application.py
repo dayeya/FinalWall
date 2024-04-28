@@ -1,8 +1,10 @@
 import asyncio
 from enum import Enum
-from src.exceptions import StateError, VersionError
+from src.waf_err import StateError, VersionError, AttackDetected, GetSecurityPageWarning
 
-from src.proxy_network.acl import AccessList
+from src.proxy_network.client_verification.acl import AccessList
+from src.proxy_network.client_verification.anonymity import validate_anonymity_from_host
+from src.proxy_network.client_verification.client_err import AnonymousClient
 from src.proxy_network.behavior import recv_from_client, forward_data, recv_from_server
 
 from config import WafConfig
@@ -13,6 +15,7 @@ from net.aionetwork import create_new_task, HostAddress, REMOTE_ADDR
 
 from internal.tokenization import tokenize
 from internal.system.checker import check_transaction
+from internal.system.check_types import CheckResult
 from internal.system.actions.block import build_block, build_redirect, contains_block
 from internal.system.transaction import Transaction, CLIENT_REQUEST
 from internal.database import SignatureDb
@@ -33,6 +36,7 @@ class Waf:
     A class representing a Web application firewall.
     Protects a *single* entity in the network.
     """
+
     def __init__(self) -> None:
         self.__config = WafConfig()
         self.__acl = AccessList(
@@ -66,50 +70,58 @@ class Waf:
         :param writer:
         :return: None
         """
-        stream = await AsyncStream.open_stream(*self.__target)
-        web_server = Connection(
-            stream=stream,
-            addr=HostAddress(*self.__target)
-        )
-        client = Connection(
-            stream=AsyncStream(reader, writer),
-            addr=HostAddress(*writer.get_extra_info(REMOTE_ADDR))
-        )
-        request = await recv_from_client(client)
-        if not request:
-            print(f"ERROR: could not recv from {client}")
+        check_result = CheckResult(False, None)
+        client = Connection(stream=AsyncStream(reader, writer),
+                            addr=HostAddress(*writer.get_extra_info(REMOTE_ADDR)))
+        try:
+            if validate_anonymity_from_host(client.addr, self.__acl):
+                raise AnonymousClient(f"WARNING: {client!r} is anonymous, handling case...")
 
-        tx = Transaction(
-            owner=client.addr,
-            real_host_address=None,
-            has_proxies=False,
-            raw=request,
-            side=CLIENT_REQUEST,
-            creation_date=get_unix_time(self.__config.timezone["time_zone"])
-        )
+            stream = await AsyncStream.open_stream(*self.__target)
+            web_server = Connection(stream=stream, addr=HostAddress(*self.__target))
+            # Maybe assert the servers connection and tell client that it`s not up.
 
-        tx.process()
-        check_result = await check_transaction(tx)
+            request = await recv_from_client(client)
+            if not request:
+                client.close()
+                print(f"ERROR: could not recv from {client}")
 
-        if check_result.unwrap():
+            tx = Transaction(owner=client.addr, real_host_address=None, has_proxies=False, raw=request,
+                             side=CLIENT_REQUEST, creation_date=get_unix_time(self.__config.timezone["time_zone"]))
+            tx.process()
+            check_result = await check_transaction(tx)
+            if check_result.unwrap():
+                raise AttackDetected  # Jump to handle.
+
+            token = contains_block(tx)
+            if token is not None:
+                raise GetSecurityPageWarning(token)
+
+            # After all tests, this client is authorized.
+            # Continue with simple proxy communication.
+            print(check_result.unwrap_log())
+            await forward_data(web_server, request)
+            response = await recv_from_server(web_server)
+            if not response:
+                print(f"ERROR: could not recv from server")
+            await forward_data(client, response)
+
+        except AnonymousClient:
+            # Send a block regarding anonymity.
+            print("WARNING: client is anonymous")
+            pass
+
+        except AttackDetected:
+            # Send a redirection to the client to their security page.
             location = ("/block?token=" + tokenize()).encode("utf-8")
             redirection = build_redirect(location)
             await forward_data(client, redirection)
             print(check_result.unwrap_log())
-            return
 
-        token = contains_block(tx)
-        if token:
-            block_html: bytes = build_block(token)
+        except GetSecurityPageWarning as sec_page:
+            # Send a final security page with the correct token.
+            block_html: bytes = build_block(sec_page.token)
             await forward_data(client, block_html)
-            return
-
-        print(check_result.unwrap_log())
-        await forward_data(web_server, request)
-        response = await recv_from_server(web_server)
-        if not response:
-            print(f"ERROR: could not recv from server")
-        await forward_data(client, response)
 
     async def start_acl_loop(self):
         """
@@ -207,11 +219,14 @@ async def main():
     ]
     await asyncio.gather(*work)
 
+
 if __name__ == "__main__":
     import tracemalloc
+
     tracemalloc.start()
 
     import sys
+
     if sys.version_info[0:2] != (3, 12):
         raise VersionError("Wrong python version. Please use +=3.12 only")
 

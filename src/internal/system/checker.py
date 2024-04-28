@@ -5,7 +5,7 @@ from src.internal.system.transaction import Transaction
 from src.internal.system.logging import AttackClassifier, SecurityLog, AccessLog
 from .check_types import Check, CheckResult
 
-from src.proxy_network.xff_validation import validate_xff_ips
+from src.proxy_network.client_verification.xff_validation import validate_xff_ips
 from src.net.aionetwork import create_new_task
 
 
