@@ -1,7 +1,7 @@
 import asyncio
 import requests
 from dataclasses import dataclass
-from src.waf_err import AclFetchError, AclBackUpError
+from src.errors import AclFetchError, AclBackUpError
 
 
 @dataclass(slots=True)
