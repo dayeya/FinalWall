@@ -52,6 +52,9 @@ class AsyncStream:
             print("ERROR: could not connect to the given ip and port.")
             return cls(None, None)
 
+    def __bool__(self):
+        return self.__reader is not None and self.__writer is not None
+
     def __aiter__(self):
         return self
 
