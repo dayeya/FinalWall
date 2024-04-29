@@ -19,6 +19,13 @@ class EntityShutdown(Exception):
     pass
 
 
+class WebServerOffline(EntityShutdown):
+    """
+    Wrapper exception that raised when the target machine is not up.
+    """
+    pass
+
+
 class AclFetchError(Exception):
     """
     Raised when Access List activity loop fails to fetch from API or backup sources.
@@ -56,6 +63,6 @@ class GetSecurityPageWarning(Warning):
     Note:
         This warning is just for `jumping` reasons to handle sec page delivery.
     """
-    def __init__(self, token: str="", *args):
-        self.token = token
+    def __init__(self, token: str="", *args: tuple):
         super().__init__(*args)
+        self.token = token

@@ -8,7 +8,7 @@ ip = "127.0.0.1"
 port = 50000
 
 [Proxy]
-ip = "127.0.0.1"
+ip = "0.0.0.0"
 port = 8080
 
 [Admin]
@@ -21,6 +21,9 @@ port = 60000
 api = "https://check.torproject.org/exit-addresses"
 backup = "C:\\coding\\NetGuard\\src\\proxy_network\\TorExitNodes.txt"
 interval = 1800 # 30 minutes
+
+[GeoIP]
+banned_countries = ["Iran", "North Korea", "Palestine", "Syria", "Lebanon"]
 
 [Timezone]
 time_zone = "Asia/Jerusalem"

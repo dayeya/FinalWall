@@ -1,49 +1,76 @@
-import geoip2.database
 from pathlib import Path
+from functools import lru_cache
+from dataclasses import dataclass
+import geoip2.database, geoip2.errors
 
-from src.net.aionetwork import HostAddress
-from src.internal.system.transaction import Transaction
 from src.proxy_network.client_verification.acl import AccessList
 
 ROOT_DIR = Path(__file__).parent.parent
-__mmdb_path = ROOT_DIR / "geoip2_db" / "GeoLite2-Country.mmdb"
+__mmdb_path = ROOT_DIR / "geoip2_db" / "GeoLite2-City.mmdb"
 
 
-def validate_anonymity_from_proxies(tx: Transaction, access_list: AccessList) -> bool:
+class VerificationFlag:
+    ANONYMOUS = 1
+    GEOLOCATION = 2
+
+
+@dataclass(slots=True)
+class GeoData:
+    continent: str
+    country: str
+    country_confidence: int
+    city: str
+    city_confidence: int
+
+
+def validate_anonymity_from_ip(ip: str, access_list: AccessList) -> bool:
     """
-    Validates the transactions real_host_address by checking if they are anonymous.
-    :param tx:
+    Validates the ip by checking if it is an untrusted ip.
+    :param ip:
     :param access_list:
     :return:
     """
-    pass
+    return ip in access_list
 
 
-def validate_anonymity_from_host(host: HostAddress, access_list: AccessList) -> bool:
+def get_geoip_data(ip: str) -> GeoData | None:
     """
-    Validates the host by checking if it is an untrusted resource.
-    :param host:
-    :param access_list:
+    Gets the geoip data regarding an ip address.
+    :param ip:
     :return:
     """
-    return host.ip in access_list
+    try:
+        with geoip2.database.Reader(__mmdb_path) as reader:
+            response = reader.city(ip)
+            print(response)
+            return GeoData(
+                continent=response.continent.name,
+                country=response.country.iso_code,
+                country_confidence=response.country.confidence,
+                city=response.city.name,
+                city_confidence=response.city.confidence,
+            )
+    except geoip2.errors.AddressNotFoundError:
+        return None
 
 
-def validate_hosts_geoip(host: HostAddress):
-    """
-    Validates the hosts address of a client.
-    :param host:
-    :return:
-    """
-    with geoip2.database.Reader(__mmdb_path) as reader:
-        pass
+def validate_geoip_data(ip: str, banned_countries: list) -> bool:
+    geodata = get_geoip_data(ip)
+    if geodata is None:
+        # client is not found on the db, assuming he is not valid.
+        return False
+    return geodata.country in banned_countries
 
 
-def validate_dirty_client(host: HostAddress, access_list: AccessList) -> bool:
+def validate_dirty_client(ip: str, access_list: AccessList, banned_countries: list) -> int:
     """
     Validates the clients host address based on its geolocation and anonymity.
-    :param host:
+    :param banned_countries: 
+    :param ip:
     :param access_list:
     :return:
     """
-    pass
+    anonymous = validate_anonymity_from_ip(ip, access_list)
+    geolocation = validate_geoip_data(ip, banned_countries)
+    result = VerificationFlag.ANONYMOUS if anonymous else 0 | VerificationFlag.GEOLOCATION if geolocation else 0
+    return result

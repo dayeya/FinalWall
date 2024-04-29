@@ -1,10 +1,10 @@
 import asyncio
 from enum import Enum
-from src.waf_err import StateError, VersionError, AttackDetected, GetSecurityPageWarning
+from src.errors import StateError, VersionError, AttackDetected, GetSecurityPageWarning
 
 from src.proxy_network.client_verification.acl import AccessList
-from src.proxy_network.client_verification.anonymity import validate_anonymity_from_host
-from src.proxy_network.client_verification.client_err import AnonymousClient
+from src.proxy_network.client_verification.errors import UnauthorizedClientFound
+from src.proxy_network.client_verification.anonymity import validate_dirty_client, VerificationFlag
 from src.proxy_network.behavior import recv_from_client, forward_data, recv_from_server
 
 from config import WafConfig
@@ -74,13 +74,15 @@ class Waf:
         client = Connection(stream=AsyncStream(reader, writer),
                             addr=HostAddress(*writer.get_extra_info(REMOTE_ADDR)))
         try:
-            if validate_anonymity_from_host(client.addr, self.__acl):
-                raise AnonymousClient(f"WARNING: {client!r} is anonymous, handling case...")
+            flag = validate_dirty_client(client.addr.ip, self.__acl, self.__config.geoip["banned_countries"])
+            if flag != 0:
+                raise UnauthorizedClientFound(flags=flag)
 
             stream = await AsyncStream.open_stream(*self.__target)
-            web_server = Connection(stream=stream, addr=HostAddress(*self.__target))
-            # Maybe assert the servers connection and tell client that it`s not up.
+            if not stream:
+                print("Web server is not listening...")
 
+            web_server = Connection(stream=stream, addr=HostAddress(*self.__target))
             request = await recv_from_client(client)
             if not request:
                 client.close()
@@ -89,7 +91,8 @@ class Waf:
             tx = Transaction(owner=client.addr, real_host_address=None, has_proxies=False, raw=request,
                              side=CLIENT_REQUEST, creation_date=get_unix_time(self.__config.timezone["time_zone"]))
             tx.process()
-            check_result = await check_transaction(tx)
+            check_result = await check_transaction(tx, self.__acl, self.__config.geoip["banned_countries"])
+            print(repr(check_result))
             if check_result.unwrap():
                 raise AttackDetected  # Jump to handle.
 
@@ -106,9 +109,12 @@ class Waf:
                 print(f"ERROR: could not recv from server")
             await forward_data(client, response)
 
-        except AnonymousClient:
-            # Send a block regarding anonymity.
-            print("WARNING: client is anonymous")
+        except UnauthorizedClientFound as case:
+            if case.flags & VerificationFlag.ANONYMOUS:
+                pass
+            if case.flags & VerificationFlag.GEOLOCATION:
+                pass
+            # client is anonymous *AND* in a bad geolocation.
             pass
 
         except AttackDetected:

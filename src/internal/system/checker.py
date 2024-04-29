@@ -1,12 +1,14 @@
 import asyncio
 
+from .check_types import Check, CheckResult
+from src.net.aionetwork import create_new_task
+
 from src.internal.database import SignatureDb
 from src.internal.system.transaction import Transaction
 from src.internal.system.logging import AttackClassifier, SecurityLog, AccessLog
-from .check_types import Check, CheckResult
 
+from src.proxy_network.client_verification.acl import AccessList
 from src.proxy_network.client_verification.xff_validation import validate_xff_ips
-from src.net.aionetwork import create_new_task
 
 
 PAIR_SEPARATOR = ","
@@ -71,13 +73,13 @@ async def _check_sql_injection(tx: Transaction) -> CheckResult:
         return CheckResult(result=False, log=None)
 
 
-async def check_transaction(tx: Transaction) -> CheckResult:
+async def check_transaction(tx: Transaction, access_list: AccessList, banned_countries: list) -> CheckResult:
     """
     Analyzes a transaction for several vulnerabilities.
     :returns: CheckResult
     """
     checks = [
-        Check(fn=validate_xff_ips, args=(tx,)),
+        Check(fn=validate_xff_ips, args=(tx, access_list, banned_countries)),
         Check(fn=_check_path, args=(tx,)),
         Check(fn=_check_sql_injection, args=(tx,))
     ]
