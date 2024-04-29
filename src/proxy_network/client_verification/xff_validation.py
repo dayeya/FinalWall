@@ -6,7 +6,7 @@ from src.internal.system.logging import SecurityLog, AttackClassifier
 from src.net.aionetwork import create_new_task, convert_netloc, HostAddress
 
 from src.proxy_network.client_verification.acl import AccessList
-from src.proxy_network.client_verification.anonymity import validate_dirty_client
+from src.proxy_network.client_verification.anonymity import validate_dirty_client, get_geoip_data
 
 XFF_SEP = ","
 
@@ -51,7 +51,8 @@ async def validate_xff_ips(tx: Transaction, access_list: AccessList, banned_coun
             malicious_data=", ".join(blacklisted_proxies).encode("utf-8"),
             metadata={
                 "Description": "Detected a malicious IP address inside an XFF header",
-                "Anonymity": "Yes"
+                "Geodata": get_geoip_data(blacklisted_proxies[-1]),
+                "Anonymity": "Yes",
             }
         )
         return CheckResult(result=True, log=log)

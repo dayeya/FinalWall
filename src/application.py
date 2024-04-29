@@ -36,7 +36,6 @@ class Waf:
     A class representing a Web application firewall.
     Protects a *single* entity in the network.
     """
-
     def __init__(self) -> None:
         self.__config = WafConfig()
         self.__acl = AccessList(
@@ -80,7 +79,7 @@ class Waf:
 
             stream = await AsyncStream.open_stream(*self.__target)
             if not stream:
-                print("Web server is not listening...")
+                print("ERROR: webserver is not up")
 
             web_server = Connection(stream=stream, addr=HostAddress(*self.__target))
             request = await recv_from_client(client)
@@ -92,7 +91,6 @@ class Waf:
                              side=CLIENT_REQUEST, creation_date=get_unix_time(self.__config.timezone["time_zone"]))
             tx.process()
             check_result = await check_transaction(tx, self.__acl, self.__config.geoip["banned_countries"])
-            print(repr(check_result))
             if check_result.unwrap():
                 raise AttackDetected  # Jump to handle.
 

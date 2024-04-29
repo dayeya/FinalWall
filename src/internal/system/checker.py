@@ -8,6 +8,7 @@ from src.internal.system.transaction import Transaction
 from src.internal.system.logging import AttackClassifier, SecurityLog, AccessLog
 
 from src.proxy_network.client_verification.acl import AccessList
+from src.proxy_network.client_verification.anonymity import get_geoip_data
 from src.proxy_network.client_verification.xff_validation import validate_xff_ips
 
 
@@ -29,7 +30,7 @@ async def _check_path(tx: Transaction) -> CheckResult:
             port=tx.owner.port,
             creation_date=tx.creation_date,
             malicious_data=tx.url.path,
-            metadata={}
+            metadata={"Geodata": get_geoip_data(tx.owner.ip)}
         )
         return CheckResult(result=True, log=log)
 
@@ -55,7 +56,7 @@ async def _check_sql_injection(tx: Transaction) -> CheckResult:
                         port=tx.owner.port,
                         creation_date=tx.creation_date,
                         malicious_data=current_query_val,
-                        metadata={}
+                        metadata={"Geodata": get_geoip_data(tx.real_host_address.ip)}
                     )
                     return CheckResult(result=True, log=log)
 
@@ -67,7 +68,7 @@ async def _check_sql_injection(tx: Transaction) -> CheckResult:
                             port=tx.owner.port,
                             creation_date=tx.creation_date,
                             malicious_data=current_query_val,
-                            metadata={}
+                            metadata={"Geodata": get_geoip_data(tx.real_host_address.ip)}
                         )
                         return CheckResult(result=True, log=log)
         return CheckResult(result=False, log=None)
