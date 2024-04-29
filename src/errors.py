@@ -57,12 +57,13 @@ class EntityShutdownWarning(Warning):
     pass
 
 
-class GetSecurityPageWarning(Warning):
+class UnauthorizedClientFound(Warning):
     """
     Raised when a client was blocked and is now seeking their security page.
     Note:
         This warning is just for `jumping` reasons to handle sec page delivery.
     """
-    def __init__(self, token: str="", *args: tuple):
+    def __init__(self, flags: int=0, token: str="", *args: tuple):
         super().__init__(*args)
         self.token = token
+        self.flags = flags
