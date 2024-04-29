@@ -1,64 +1,64 @@
 import re
 from pathlib import Path
-from re import Pattern
 from urllib.parse import urlunparse
 from jinja2 import Environment, FileSystemLoader
-from src.internal.system.transaction import Transaction, Method
+from src.internal.system.transaction import Transaction
+
+from src.components import Singleton
 
 
-def _templates_path() -> Path:
-    templates_path = Path(__file__).parent.joinpath("templates")
-    return templates_path
+ROOT_DIR = Path(__file__).parent
+TEMPLATES_PATH = ROOT_DIR / "templates"
+BLOCK_REGEX: re.Pattern[str] = re.compile(r"/block[?]token=([a-z0-9]{8})")
 
 
-def _join_templates_path(location: str) -> str:
-    parent = Path(__file__).parent.joinpath("templates")
-    location = str(parent.joinpath(location))
-    return location
-
-
-def _create_environment() -> Environment:
-    try:
-        templates_path = _templates_path()
-        templates_loader = FileSystemLoader(templates_path)
-        env = Environment(loader=templates_loader)
-        _ = env.list_templates()
-        return env
-    except Exception as e:
-        print("Unable to create environment due:", e)
-        raise e
-
-
-ENV = _create_environment()
-SECURITY_PAGE = "security_page.html"
-BLOCK_REGEX: Pattern[str] = re.compile(r"/block[?]token=([a-z0-9]{8})")
-
-
-def _push_args_into_template(activity_token: str) -> bytes:
-    block_template = ENV.get_template(SECURITY_PAGE)
-    parsed_template = block_template.render(token=activity_token)
-    return parsed_template.encode("utf-8")
-
-
-def build_block(token: str) -> bytes:
-    security_page: bytes = _push_args_into_template(token)
-    block_html = b"HTTP/1.1 200 OK\r\n"
-    block_html += b"Content-Type: text/html; charset=utf-8\r\n"
-    block_html += b"Content-Length: " + str(len(security_page)).encode("utf-8") + b"\r\n"
-    block_html += b"Connection: close\r\n\r\n"
-    block_html += security_page
-    return block_html
-
-
-def build_redirect(location: bytes) -> bytes:
+def create_redirection(location: bytes) -> bytes:
     redirect = b"HTTP/1.1 302 Found\r\n"
     redirect += b"Location: " + location + b"\r\n\r\n"
     return redirect
 
 
 def contains_block(tx: Transaction) -> str | None:
+    """
+    Uses regex to get the token of a transaction seeking its security page.
+    :param tx:
+    :return:
+    """
     resource: bytes = urlunparse(tx.url)
     m: re.Match[str] = re.match(BLOCK_REGEX, resource)
     if not m:
         return None
     return m.group(1)
+
+
+class TemplateEnv(Environment, metaclass=Singleton):
+    """
+    A wrapper class to jinja2.Environment.
+    """
+    def __init__(self):
+        super().__init__(loader=FileSystemLoader(TEMPLATES_PATH))
+
+    def render_kwargs(self, **kwargs) -> bytes:
+        """
+        Creates a complete template with the given kwargs.
+        :param kwargs:
+        :return:
+        """
+        general_template = self.get_template("general_template.html")
+        return general_template.render(**kwargs).encode("utf-8")
+
+
+def create_security_page(info):
+    """
+    Builds a security page based on parameters inside info.
+    :param info:
+    :return:
+    """
+    html: bytes = TemplateEnv().render_kwargs(**info)
+    content_length = str(len(html)).encode("utf-8")
+    response = b"HTTP/1.1 200 OK\r\n"
+    response += b"Content-Type: text/html; charset=utf-8\r\n"
+    response += b"Content-Length: " + content_length + b"\r\n"
+    response += b"Connection: close\r\n\r\n"
+    response += html
+    return response
