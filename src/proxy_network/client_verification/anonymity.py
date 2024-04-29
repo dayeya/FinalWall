@@ -9,9 +9,10 @@ ROOT_DIR = Path(__file__).parent.parent
 __mmdb_path = ROOT_DIR / "geoip2_db" / "GeoLite2-City.mmdb"
 
 
-class VerificationFlag:
-    ANONYMOUS = 1
-    GEOLOCATION = 2
+class Flag:
+    ATTACK = 0x00000002
+    ANONYMOUS = 0x00000004
+    GEOLOCATION = 0x00000006
 
 
 @dataclass(slots=True)
@@ -72,5 +73,5 @@ def validate_dirty_client(ip: str, access_list: AccessList, banned_countries: li
     """
     anonymous = validate_anonymity_from_ip(ip, access_list)
     geolocation = validate_geoip_data(ip, banned_countries)
-    result = VerificationFlag.ANONYMOUS if anonymous else 0 | VerificationFlag.GEOLOCATION if geolocation else 0
+    result = Flag.ANONYMOUS if anonymous else 0 | Flag.GEOLOCATION if geolocation else 0
     return result

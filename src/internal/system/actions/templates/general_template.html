@@ -91,14 +91,15 @@
 <body>
     <div class="con">
         <h1 class="header">
-            Wrongful behavior detected.<br>  
+            {{ header }}<br>
         </h1>
 
-        <p class="par"><br>
-            Your activity log was sent to our administration team and is investigated.<br>
-            If you believe your activity was legitimate, please contact us via <span class="spany"><a>email</a></span> with the provided token.<br><br>
-            Activity token: {{ token }}
-        </p>
+        <p class="par">
+            {% for line in further_information %}
+            {{ line }}<br>
+            {% endfor %}
+        <br>
+        Activity token: {{ token }}
     </div>
 </body>
 </html>

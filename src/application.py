@@ -1,10 +1,9 @@
 import asyncio
 from enum import Enum
-from src.errors import StateError, VersionError, AttackDetected, GetSecurityPageWarning
+from src.errors import StateError, VersionError, UnauthorizedClientFound
 
 from src.proxy_network.client_verification.acl import AccessList
-from src.proxy_network.client_verification.errors import UnauthorizedClientFound
-from src.proxy_network.client_verification.anonymity import validate_dirty_client, VerificationFlag
+from src.proxy_network.client_verification.anonymity import validate_dirty_client, Flag
 from src.proxy_network.behavior import recv_from_client, forward_data, recv_from_server
 
 from config import WafConfig
@@ -16,7 +15,7 @@ from net.aionetwork import create_new_task, HostAddress, REMOTE_ADDR
 from internal.tokenization import tokenize
 from internal.system.checker import check_transaction
 from internal.system.check_types import CheckResult
-from internal.system.actions.block import build_block, build_redirect, contains_block
+from internal.system.actions.block import create_security_page
 from internal.system.transaction import Transaction, CLIENT_REQUEST
 from internal.database import SignatureDb
 
@@ -73,9 +72,9 @@ class Waf:
         client = Connection(stream=AsyncStream(reader, writer),
                             addr=HostAddress(*writer.get_extra_info(REMOTE_ADDR)))
         try:
-            flag = validate_dirty_client(client.addr.ip, self.__acl, self.__config.geoip["banned_countries"])
-            if flag != 0:
-                raise UnauthorizedClientFound(flags=flag)
+            flags = validate_dirty_client(client.addr.ip, self.__acl, self.__config.geoip["banned_countries"])
+            if flags != 0:
+                raise UnauthorizedClientFound(flags=flags, token=tokenize())
 
             stream = await AsyncStream.open_stream(*self.__target)
             if not stream:
@@ -92,11 +91,7 @@ class Waf:
             tx.process()
             check_result = await check_transaction(tx, self.__acl, self.__config.geoip["banned_countries"])
             if check_result.unwrap():
-                raise AttackDetected  # Jump to handle.
-
-            token = contains_block(tx)
-            if token is not None:
-                raise GetSecurityPageWarning(token)
+                raise UnauthorizedClientFound(flags=Flag.ATTACK, token=tokenize())
 
             # After all tests, this client is authorized.
             # Continue with simple proxy communication.
@@ -107,25 +102,31 @@ class Waf:
                 print(f"ERROR: could not recv from server")
             await forward_data(client, response)
 
-        except UnauthorizedClientFound as case:
-            if case.flags & VerificationFlag.ANONYMOUS:
-                pass
-            if case.flags & VerificationFlag.GEOLOCATION:
-                pass
-            # client is anonymous *AND* in a bad geolocation.
-            pass
-
-        except AttackDetected:
-            # Send a redirection to the client to their security page.
-            location = ("/block?token=" + tokenize()).encode("utf-8")
-            redirection = build_redirect(location)
-            await forward_data(client, redirection)
+        except UnauthorizedClientFound as event:
+            # Log the results log
             print(check_result.unwrap_log())
 
-        except GetSecurityPageWarning as sec_page:
-            # Send a final security page with the correct token.
-            block_html: bytes = build_block(sec_page.token)
-            await forward_data(client, block_html)
+            further_information: str = ""
+            security_page_header: str = ""
+            if event.flags & Flag.ATTACK:
+                security_page_header = self.__config.securitypage["attack_header"]
+                further_information = self.__config.securitypage["attack_additional_info"]
+            elif event.flags & Flag.ANONYMOUS:
+                security_page_header = self.__config.securitypage["anonymity_header"]
+                further_information = self.__config.securitypage["anonymity_additional_info"]
+            elif event.flags & Flag.GEOLOCATION:
+                security_page_header = self.__config.securitypage["geo_header"]
+                further_information = self.__config.securitypage["geo_additional_info"]
+            elif event.flags & (Flag.ANONYMOUS | Flag.GEOLOCATION):
+                security_page_header = self.__config.securitypage["dirty_header"]
+                further_information = self.__config.securitypage["dirty_additional_info"]
+
+            security_page: bytes = create_security_page(info={
+                "header": security_page_header,
+                "further_information": further_information,
+                "token": event.token
+            })
+            await forward_data(client, security_page)
 
     async def start_acl_loop(self):
         """
