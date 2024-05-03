@@ -1,9 +1,9 @@
+from typing import Callable
+
 from src.net.connection import Connection
 from src.http_process import SearchContext, search_header, contains_body_seperator
 
-__doc__ = """
-behavior.py defines functions with similar functionality that of a proxy.
-"""
+__doc__ = """behavior.py defines functions with similar functionality that of a proxy."""
 
 
 async def recv_from_server(server: Connection) -> bytes:
@@ -24,17 +24,22 @@ async def recv_from_server(server: Connection) -> bytes:
     return http_data + content
 
 
-async def recv_from_client(client: Connection) -> bytes:
+async def recv_from_client(client: Connection, execption_callback: Callable) -> bytes:
     """
-    Receiving data from the client.
+    Receiving data from the client, if an error occurs callback will be called.
+    :param execption_callback:
     :param client:
     :return: bytes
     """
-    data: bytes = await client.recv_until(
-        condition=contains_body_seperator,
-        args=()
-    )
-    return data
+    try:
+        data: bytes = await client.recv_until(
+            condition=contains_body_seperator,
+            args=()
+        )
+        return data
+    except:
+        print(f"An exception occurred. Performing callback: {execption_callback.__name__}")
+        execption_callback()
 
 
 async def forward_data(conn: Connection, data: bytes) -> None:

@@ -1,3 +1,4 @@
 .env/
 .vscode/
 .idea/
+src/events/profiles_db

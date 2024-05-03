@@ -1,23 +1,29 @@
 import asyncio
 from enum import Enum
-from src.errors import StateError, VersionError, UnauthorizedClientFound
+from errors import StateError, VersionError
 
-from src.proxy_network.client_verification.acl import AccessList
-from src.proxy_network.client_verification.anonymity import validate_dirty_client, Flag
-from src.proxy_network.behavior import recv_from_client, forward_data, recv_from_server
+from proxy_network.anonymity import AccessList
+from proxy_network.geolocation import get_geoip_data
+from proxy_network.behavior import recv_from_client, forward_data, recv_from_server
 
 from config import WafConfig
-from date import get_unix_time
+from time_utils import get_unix_time, get_epoch_time
 
+from net.profile import Profile
 from net.connection import Connection, AsyncStream
 from net.aionetwork import create_new_task, HostAddress, REMOTE_ADDR
 
-from internal.tokenization import tokenize
-from internal.system.checker import check_transaction
-from internal.system.check_types import CheckResult
-from internal.system.actions.block import create_security_page
-from internal.system.transaction import Transaction, CLIENT_REQUEST
+from events.ban import BanMap
+from events.handler import ProfileHandler
+from events.event import Event, CONNECTION, AUTHORIZED_REQUEST, UNAUTHORIZED_REQUEST
+
 from internal.database import SignatureDb
+from internal.tokenization import tokenize
+from internal.system.transaction import Transaction
+from internal.system.checks import check_transaction, validate_dirty_client, classify_by_flags
+# from internal.system.types import ANONYMOUS, GEOLOCATION
+from internal.system.logging import SecurityLog, AccessLog, AttackClassifier
+from internal.system.actions.block import create_security_page
 
 
 class _WafState(Enum):
@@ -35,18 +41,18 @@ class Waf:
     A class representing a Web application firewall.
     Protects a *single* entity in the network.
     """
-    def __init__(self) -> None:
-        self.__config = WafConfig()
-        self.__acl = AccessList(
-            main_list=[],
-            api=self.__config.acl["api"],
-            interval=self.__config.acl["interval"],
-            backup=self.__config.acl["backup"]
-        )
+    def __init__(self, conf: WafConfig) -> None:
+        self.__config = conf
         self.__server = None
+        self.__ban_map = BanMap()
+        self.__profile_handler = ProfileHandler()
+        self.__acl = AccessList(main_list=[],
+                                api=conf.acl["api"],
+                                interval=conf.acl["interval"],
+                                backup=conf.acl["backup"])
+        self.__address = (conf.proxy["ip"], conf.proxy["port"])
+        self.__target = (conf.webserver["ip"], conf.webserver["port"])
         self.__state = _WafState.CREATED
-        self.__address = (self.__config.proxy["ip"], self.__config.proxy["port"])
-        self.__target = (self.__config.webserver["ip"], self.__config.webserver["port"])
         print(f"INFO: Waf created")
 
     @property
@@ -58,8 +64,105 @@ class Waf:
         return self.__config
 
     @property
-    def target(self):
+    def target(self) -> tuple[str, int]:
         return self.__target
+
+    def __set_connection_profile(self, client: Connection):
+        """
+        Creates a 'CONNECTION' event and profile.
+        :param client:
+        :return:
+        """
+        event = Event(kind=CONNECTION, id=tokenize(), log=None, tx=None)
+        profile = Profile(
+            host=client.ip,
+            connection_date=get_unix_time(self.__config.timezone["time_zone"]),
+            last_used_port=client.port,
+            last_connection_time=get_epoch_time(),
+            last_event=event,
+            attempted_attacks=0,
+            last_attempted_attack=""
+        )
+        with self.__profile_handler as ph:
+            ph.insert_profile(client.hash, profile)
+
+    async def __handle_unauthorized_client(self, client: Connection, event: Event):
+        """
+        Handles an event made by an unauthorized user.
+        :param event:
+        :return:
+        """
+        # Update the profile.
+        with self.__profile_handler as ph:
+            profile: Profile = ph.get_profile_by_hash(client.hash)
+            profile_updates = {
+                "last_used_port": client.port,
+                "last_connection_time": get_epoch_time(),
+                "last_event": event,
+                "attempted_attacks": profile.attempted_attacks + 1,
+                "last_attempted_attack": ",".join(event.log.classifiers)
+            }
+            ph.update_profile(client.hash, profile_updates)
+
+        # TODO: Check if the client is already banned and work on ban system.
+
+        # Build a security page.
+        further_information = ""
+        security_page_header = ""
+        match event.log.classifiers:
+            case [AttackClassifier.Sql_Injection | AttackClassifier.Unauthorized_access]:
+                security_page_header = self.__config.securitypage["attack_header"]
+                further_information = self.__config.securitypage["attack_additional_info"]
+            case [AttackClassifier.Anonymity]:
+                security_page_header = self.__config.securitypage["anonymity_header"]
+                further_information = self.__config.securitypage["anonymity_additional_info"]
+            case [AttackClassifier.Banned_Geolocation]:
+                security_page_header = self.__config.securitypage["geo_header"]
+                further_information = self.__config.securitypage["geo_additional_info"]
+            case [AttackClassifier.Anonymity, AttackClassifier.Banned_Geolocation]:
+                security_page_header = self.__config.securitypage["dirty_header"]
+                further_information = self.__config.securitypage["dirty_additional_info"]
+
+        # Forward it.
+        print("Before creation.")
+        security_page: bytes = create_security_page(info={
+            "header": security_page_header,
+            "further_information": further_information,
+            "token": event.id
+        })
+        print("After creation.")
+        await forward_data(client, security_page)
+
+        # Log the log object.
+        print(event.log)
+
+    async def __handle_authorized_client(self, client: Connection, event: Event):
+        """
+        Handles an authorized client.
+        :param client:
+        :param event:
+        :return:
+        """
+        # Update the profile.
+        with self.__profile_handler as ph:
+            profile_updates = {
+                "last_used_port": client.port,
+                "last_connection_time": get_epoch_time(),
+                "last_event": event,
+            }
+            ph.update_profile(client.hash, profile_updates)
+
+        # Connect to the web server.
+        stream = await AsyncStream.open_stream(*self.__target)
+        web_server = Connection(stream=stream, addr=HostAddress(*self.__target))
+
+        # Forward the clients request.
+        await forward_data(web_server, event.tx.raw)
+        response = await recv_from_server(web_server)
+        await forward_data(client, response)
+
+        # Log the log object.
+        print(event.log)
 
     async def __handle_connection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         """
@@ -68,65 +171,76 @@ class Waf:
         :param writer:
         :return: None
         """
-        check_result = CheckResult(False, None)
         client = Connection(stream=AsyncStream(reader, writer),
                             addr=HostAddress(*writer.get_extra_info(REMOTE_ADDR)))
-        try:
-            flags = validate_dirty_client(client.addr.ip, self.__acl, self.__config.geoip["banned_countries"])
-            if flags != 0:
-                raise UnauthorizedClientFound(flags=flags, token=tokenize())
 
-            stream = await AsyncStream.open_stream(*self.__target)
-            if not stream:
-                print("ERROR: webserver is not up")
+        # Insert a connection profile.
+        self.__set_connection_profile(client)
 
-            web_server = Connection(stream=stream, addr=HostAddress(*self.__target))
-            request = await recv_from_client(client)
-            if not request:
-                client.close()
-                print(f"ERROR: could not recv from {client}")
+        access_list = self.__acl
+        banned_countries = self.__config.geoip["banned_countries"]
+        flags = validate_dirty_client(client.ip, access_list, banned_countries)
 
-            tx = Transaction(owner=client.addr, real_host_address=None, has_proxies=False, raw=request,
-                             side=CLIENT_REQUEST, creation_date=get_unix_time(self.__config.timezone["time_zone"]))
-            tx.process()
-            check_result = await check_transaction(tx, self.__acl, self.__config.geoip["banned_countries"])
-            if check_result.unwrap():
-                raise UnauthorizedClientFound(flags=Flag.ATTACK, token=tokenize())
+        if flags != 0:
+            log_classifiers = classify_by_flags(flags)
+            security_log = SecurityLog(
+                ip=client.ip,
+                port=client.port,
+                creation_date=get_unix_time(self.__config.timezone["timezone"]),
+                classifiers=log_classifiers,
+                geolocation=get_geoip_data(client.ip)
+            )
+            event = Event(
+                kind=UNAUTHORIZED_REQUEST,
+                id=tokenize(),
+                log=security_log,
+                tx=None
+            )
+            await self.__handle_unauthorized_client(client, event)
+            return
 
-            # After all tests, this client is authorized.
-            # Continue with simple proxy communication.
-            print(check_result.unwrap_log())
-            await forward_data(web_server, request)
-            response = await recv_from_server(web_server)
-            if not response:
-                print(f"ERROR: could not recv from server")
-            await forward_data(client, response)
+        request = await recv_from_client(client, execption_callback=client.close)
+        tx: Transaction = Transaction(
+            owner=client.addr,
+            real_host_address=None,
+            raw=request,
+            creation_date=get_unix_time(self.__config.timezone["time_zone"])
+        )
+        tx.process()
 
-        except UnauthorizedClientFound as event:
-            # Log the results log
-            print(check_result.unwrap_log())
+        access_list = self.__acl
+        banned_countries = self.__config.geoip["banned_countries"]
+        check_result = await check_transaction(tx, access_list, banned_countries)
 
-            further_information: str = ""
-            security_page_header: str = ""
-            if event.flags & Flag.ATTACK:
-                security_page_header = self.__config.securitypage["attack_header"]
-                further_information = self.__config.securitypage["attack_additional_info"]
-            elif event.flags & Flag.ANONYMOUS:
-                security_page_header = self.__config.securitypage["anonymity_header"]
-                further_information = self.__config.securitypage["anonymity_additional_info"]
-            elif event.flags & Flag.GEOLOCATION:
-                security_page_header = self.__config.securitypage["geo_header"]
-                further_information = self.__config.securitypage["geo_additional_info"]
-            elif event.flags & (Flag.ANONYMOUS | Flag.GEOLOCATION):
-                security_page_header = self.__config.securitypage["dirty_header"]
-                further_information = self.__config.securitypage["dirty_additional_info"]
+        if check_result.result:
+            security_log = SecurityLog(
+                ip=client.ip,
+                port=client.port,
+                creation_date=get_unix_time(self.__config.timezone["time_zone"]),
+                classifiers=check_result.classifiers,
+                geolocation=get_geoip_data(client.ip)
+            )
+            event = Event(
+                kind=UNAUTHORIZED_REQUEST,
+                id=tokenize(),
+                log=security_log,
+                tx=tx
+            )
+            await self.__handle_unauthorized_client(client, event)
+            return
 
-            security_page: bytes = create_security_page(info={
-                "header": security_page_header,
-                "further_information": further_information,
-                "token": event.token
-            })
-            await forward_data(client, security_page)
+        access_log = AccessLog(
+            ip=client.ip,
+            port=client.port,
+            creation_date=get_unix_time(self.__config.timezone["time_zone"])
+        )
+        event = Event(
+            kind=AUTHORIZED_REQUEST,
+            id=str(tx.hash),
+            log=access_log,
+            tx=tx
+        )
+        await self.__handle_authorized_client(client, event)
 
     async def start_acl_loop(self):
         """
@@ -215,7 +329,8 @@ async def main():
     except Exception as _database_loading_err:
         print("ERROR: could not initialize database due:", _database_loading_err)
 
-    waf = Waf()
+    conf = WafConfig()
+    waf = Waf(conf=conf)
     await waf.deploy()
 
     work = [

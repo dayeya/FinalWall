@@ -5,10 +5,6 @@ from src.net.aionetwork import HostAddress
 from src.http_process.process import process_request_line, process_headers_and_body, process_query
 
 
-SERVER_RESPONSE = 0
-CLIENT_REQUEST = 1
-
-
 class Method:
     GET = b"GET"
     POST = b"POST"
@@ -38,18 +34,19 @@ class Transaction:
     """
     owner: HostAddress
     real_host_address: Union[HostAddress, None]
-    has_proxies: bool
-    creation_date: str
     raw: bytes
-    side: int
-    id: int = 0
+    creation_date: str
     method: bytes = Method.GET
     url: ParseResultBytes = None
     version: bytes = b""
     query_params: dict = field(default_factory=dict)
     headers: dict = field(default_factory=dict)
     body: bytes = b""
-    
+
+    @property
+    def hash(self) -> int:
+        return hash(repr(self))
+
     def process(self) -> None:
         self.__process_request_line()
         self.__process_message()
@@ -57,24 +54,9 @@ class Transaction:
     
     def __process_request_line(self) -> None:
         self.method, self.url, self.version = process_request_line(self.raw)
-
-    def __create_transaction_id(self) -> None:
-        self.id = hash(repr(self))
     
     def __process_message(self) -> None:
         self.headers, self.body = process_headers_and_body(self.raw)
-    
-    def __process_headers(self) -> None:
-        """
-        Processes all the headers and decodes them if needed.
-        """
-        pass
-        
-    def __process_body(self) -> None:
-        """
-        Processes the body and decodes it if needed.
-        """
-        pass
     
     def __process_params(self) -> None:
         """

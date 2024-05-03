@@ -1,4 +1,5 @@
 import pytz
+import time
 from datetime import datetime
 
 
@@ -12,3 +13,11 @@ def get_unix_time(tz: str) -> str:
     """
     uni_time = datetime.now(pytz.timezone(tz))
     return uni_time.strftime(UNIX_TIME_FORMAT)
+
+
+def get_epoch_time() -> float:
+    """
+    Time in seconds since the Epoch
+    :return:
+    """
+    return time.time()

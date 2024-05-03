@@ -1,6 +1,6 @@
 from typing import Callable
 from dataclasses import dataclass
-from .aionetwork import AsyncStream, HostAddress
+from .aionetwork import AsyncStream, HostAddress, hash_by_ip
 
 
 @dataclass(slots=True)
@@ -10,6 +10,18 @@ class Connection:
     """
     stream: AsyncStream
     addr: HostAddress
+
+    @property
+    def ip(self):
+        return self.addr.ip
+
+    @property
+    def port(self):
+        return self.addr.port
+
+    @property
+    def hash(self) -> bytes:
+        return hash_by_ip(self.ip)
 
     async def recv_until(self, condition: Callable, args: tuple) -> bytes:
         """

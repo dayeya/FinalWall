@@ -4,6 +4,7 @@ The asyncio Network module provides simple async networking capabilities.
 """
 
 import asyncio
+import hashlib
 import ipaddress
 import threading
 from dataclasses import dataclass
@@ -105,10 +106,20 @@ def convert_netloc(netloc: str) -> Union[Network_Address, None]:
         return None
 
 
+def hash_by_ip(ip: str) -> bytes:
+    """
+    Creates a hash from an ip address.
+    :param ip:
+    :return:
+    """
+    return hashlib.sha1(ip.encode("utf-8")).digest()
+
+
 __all__ = [
     "HostAddress",
     "AsyncStream",
     "create_new_task",
     "convert_netloc",
-    "REMOTE_ADDR"
+    "hash_by_ip",
+    "REMOTE_ADDR",
 ]
