@@ -1,1 +1,1 @@
-from .checker import *
+from .checks import *

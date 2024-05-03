@@ -1,14 +1,14 @@
 from enum import StrEnum
-from typing import Union
 from dataclasses import dataclass
+from typing import Union, Optional
+from src.proxy_network.geolocation import GeoData
 
-
-# TODO Make logging as one file or DB.
 
 class AttackClassifier(StrEnum):
-    UNAUTHORIZED_ACCESS = "Unauthorized Access"
-    SQL_INJECTION = "SQL Injection"
-    IP_SPOOFING = "IP Spoofing"
+    Unauthorized_access = "Unauthorized Access"
+    Sql_Injection = "Sql Injection"
+    Banned_Geolocation = "Banned Geolocation"
+    Anonymity = "Anonymity"
 
 
 @dataclass(slots=True)
@@ -25,9 +25,10 @@ class Log:
 
 @dataclass(slots=True)
 class SecurityLog(Log):
-    attack: AttackClassifier
-    malicious_data: bytes
-    metadata: dict
+    classifiers: list[AttackClassifier]
+    geolocation: GeoData
+    malicious_data: Optional[bytes] = None
+    metadata: Optional[dict] = None
     
     # TODO: how to download the file (Create a download whole alert when hovering on the log).
     # TODO: Data compression.
@@ -41,4 +42,4 @@ class AccessLog(Log):
     # TODO: Data compression.
 
 
-type LogType = Union[SecurityLog, AccessLog]
+type LogObject = Union[SecurityLog, AccessLog]
