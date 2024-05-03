@@ -6,7 +6,6 @@ class BanMap:
     A class representing a ban map.
     Notes:
         If a client is banned and is trying to access a service within the ban period his ban will increase.
-
     """
     def __init__(self):
         self.__map: dict[bytes, (float, float)] = {}

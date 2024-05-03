@@ -124,13 +124,11 @@ class Waf:
                 further_information = self.__config.securitypage["dirty_additional_info"]
 
         # Forward it.
-        print("Before creation.")
         security_page: bytes = create_security_page(info={
             "header": security_page_header,
             "further_information": further_information,
             "token": event.id
         })
-        print("After creation.")
         await forward_data(client, security_page)
 
         # Log the log object.

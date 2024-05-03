@@ -23,14 +23,11 @@ class Event:
         unauthorized_request: client sent an unauthorized request. In cases where the engine blocks clients
                             even before receiving requests from them, the Event.tx field will be None.
                             Happens when client is dirty - Geolocation or banned software.
-
     id: str - unique id.
         In cases where Event.tx is None the id will be tokenized.
         Otherwise, it's the tx.id.
-
     log: LogObject - log of the event.
          Either security log or access log or None.
-
     tx: Transaction - The transaction that triggered the event.
     """
     kind: str

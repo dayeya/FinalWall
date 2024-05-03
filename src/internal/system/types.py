@@ -3,7 +3,6 @@ from dataclasses import dataclass
 
 from .logging import AttackClassifier
 
-# Constants to differ the
 ANONYMOUS = 0x00000002
 GEOLOCATION = 0x00000004
 

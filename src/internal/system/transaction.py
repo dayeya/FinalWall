@@ -27,10 +27,19 @@ class Parser:
 class Transaction:
     """
     Creates a Transaction object representing each event in the system.
-    Notes:
-        real_host_address - `True-Client-IP`, refers to the TRUSTED source of the packet.
-        has_proxies - If the packet was forwarded through proxies.
-        *BOTH* are evaluated at Inspection time (Checker).
+
+    Attributes
+    ----------
+    owner - host that sent the transaction in its raw form.
+    real_host_address - Some may know it as True-Client-IP, refers to the TRUSTED source of the transaction.
+    raw - Raw bytes of the request.
+    creation_date - The date where the transaction was processed by the WAF.
+    method - HTTP method.
+    url - URL including params.
+    version - HTTP version.
+    query_params - Dictionary of the queries and their values.
+    headers - Dictionary of headers and their values.
+    body - Body of the raw bytes of the transaction.
     """
     owner: HostAddress
     real_host_address: Union[HostAddress, None]
