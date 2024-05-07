@@ -1,32 +1,28 @@
-# NetGuard
-This project aims to develop a robust and secure Web Application Firewall for websites.<br>
-NetGuard detects, monitors, and protects websites from the following web attacks.
+# FinalWall
+FinalWall is a public Open-Source Web application firewall module designed to be a robust and secure for the community.
 
-* Blind/No-Blind SQL Injection.
-* Stored/Reflected XSS.
-* CSRF
-* File Inclusion.
+## Supported vulnerabilities
+- [X] Sql Injection
+- [ ] XSS
+- [ ] Bruteforce attack
+- [ ] File inclusion.
+- [X] Unauthorized Access
+- [X] Anonymization
+- [X] Bad Geolocation
 
-# Development milestones
-- [x] Traffic flows through NetGuard.
-- [x] Signature system for attack detection.
-- [x] Security page with an activity token.
-- [x] Supports HTTP/0.9, HTTP/1.0-1.
-- [ ] Data normalisation.
-- [ ] Define a more robust blocking functionality at all levels.
-- [ ] Functional admin page with logging display and monitoring.
-- [ ] logging server for better logging management that handles log uploads and downloads.
-- [ ] Handle file uploads and file attacks.
-- [ ] Rule system for attack detection.
-- [ ] Make NetGuard highly configurable.
-- [ ] Determination of severity.
-- [ ] Geolocation and anonymity protection.
-
-# Attack detection and prevention
-NetGuard uses built-in policies and rules to block malicious data. NetGuard supports dynamically added policies and uses whitelists and blacklists to strengthen its defensive capabilities.
-
-# Database
-In progress.
+## Development milestones
+- [X] Reverse proxy
+- [X] SecLog and AccessLog system
+- [X] Source control
+- [X] Client profiling
+- [X] Attack detection - Sqli, Xss, Unauthorized access
+- [X] Dirty client validation - Anonymization, Geolocation
+- [ ] Xss
+- [ ] Bruteforce
+- [ ] File inclusion
+- [ ] Rate limiting
+- [ ] Simulations with Hackazon or bWAPP.
+- [ ] UI
 
 # Contributions
 This project was written only by Dayeya, as opposed to the contributors list.
