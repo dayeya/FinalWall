@@ -51,6 +51,7 @@ class Transaction:
     query_params: dict = field(default_factory=dict)
     headers: dict = field(default_factory=dict)
     body: bytes = b""
+    size: int = 0
 
     @property
     def hash(self) -> int:

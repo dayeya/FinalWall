@@ -1,10 +1,10 @@
 import asyncio
 
-from .types import Check, ANONYMOUS, GEOLOCATION
-from src.internal.database import SignatureDb
-from src.internal.system.types import CheckResult
-from src.internal.system.transaction import Transaction
-from src.internal.system.logging import AttackClassifier
+from ._types import Check, ANONYMOUS, GEOLOCATION
+from src.internal.signature_db import SignatureDb
+from src.internal.core._types import CheckResult
+from src.internal.core.transaction import Transaction
+from src.internal.events.logs import AttackClassifier
 from src.http_process.headers import Header
 from src.net.aionetwork import create_new_task, convert_netloc, HostAddress
 from src.proxy_network.geolocation import validate_geoip_data
@@ -29,6 +29,13 @@ def classify_by_flags(flags: int) -> list[AttackClassifier]:
 
 
 async def __validate_ip_address(ip: str, access_list: AccessList, banned_countries: list) -> str | None:
+    """
+    Validates a single ip address.
+    :param ip:
+    :param access_list:
+    :param banned_countries:
+    :return:
+    """
     valid_netloc = convert_netloc(ip)
     dirty_client = validate_dirty_client(ip, access_list, banned_countries)
     passed = valid_netloc and dirty_client == 0

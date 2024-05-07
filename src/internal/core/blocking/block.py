@@ -2,7 +2,7 @@ import re
 from pathlib import Path
 from urllib.parse import urlunparse
 from jinja2 import Environment, FileSystemLoader
-from src.internal.system.transaction import Transaction
+from src.internal.core.transaction import Transaction
 
 from src.components import Singleton
 

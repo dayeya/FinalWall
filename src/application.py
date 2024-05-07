@@ -9,21 +9,20 @@ from proxy_network.behavior import recv_from_client, forward_data, recv_from_ser
 from config import WafConfig
 from time_utils import get_unix_time, get_epoch_time
 
-from net.profile import Profile
 from net.connection import Connection, AsyncStream
 from net.aionetwork import create_new_task, HostAddress, REMOTE_ADDR
 
-from events.ban import BanMap
-from events.handler import ProfileHandler
-from events.event import Event, CONNECTION, AUTHORIZED_REQUEST, UNAUTHORIZED_REQUEST
+from internal.events import Event, CONNECTION, AUTHORIZED_REQUEST, UNAUTHORIZED_REQUEST
+from internal.events import SecurityLog, AccessLog, AttackClassifier
 
-from internal.database import SignatureDb
+from internal.core.profile import Profile
 from internal.tokenization import tokenize
-from internal.system.transaction import Transaction
-from internal.system.checks import check_transaction, validate_dirty_client, classify_by_flags
-# from internal.system.types import ANONYMOUS, GEOLOCATION
-from internal.system.logging import SecurityLog, AccessLog, AttackClassifier
-from internal.system.actions.block import create_security_page
+from internal.signature_db import SignatureDb
+from internal.core.ban_manager import BanManager
+from internal.core.transaction import Transaction
+from internal.core.profile_manager import ProfileManager
+from internal.core.blocking.block import create_security_page
+from internal.core.vuln_checks import check_transaction, validate_dirty_client, classify_by_flags
 
 
 class _WafState(Enum):
@@ -44,8 +43,8 @@ class Waf:
     def __init__(self, conf: WafConfig) -> None:
         self.__config = conf
         self.__server = None
-        self.__ban_map = BanMap()
-        self.__profile_handler = ProfileHandler()
+        self.__ban_manager = BanManager()
+        self.__profile_manager = ProfileManager()
         self.__acl = AccessList(main_list=[],
                                 api=conf.acl["api"],
                                 interval=conf.acl["interval"],
@@ -69,7 +68,7 @@ class Waf:
 
     def __set_connection_profile(self, client: Connection):
         """
-        Creates a 'CONNECTION' event and profile.
+        Creates a new profile with a last_event of connection (only if the client is not in the db).
         :param client:
         :return:
         """
@@ -83,8 +82,36 @@ class Waf:
             attempted_attacks=0,
             last_attempted_attack=""
         )
-        with self.__profile_handler as ph:
-            ph.insert_profile(client.hash, profile)
+        with self.__profile_manager as pm:
+            pm.insert_profile(client.hash, profile)
+
+    async def __handle_authorized_client(self, client: Connection, event: Event):
+        """
+        Handles an authorized client.
+        :param client:
+        :param event:
+        :return:
+        """
+        # Update the profile.
+        with self.__profile_manager as pm:
+            profile_updates = {
+                "last_used_port": client.port,
+                "last_connection_time": get_epoch_time(),
+                "last_event": event,
+            }
+            pm.update_profile(client.hash, profile_updates)
+
+        # Connect to the web server.
+        stream = await AsyncStream.open_stream(*self.__target)
+        web_server = Connection(stream=stream, addr=HostAddress(*self.__target))
+
+        # Forward the clients request.
+        await forward_data(web_server, event.tx.raw)
+        response = await recv_from_server(web_server)
+        await forward_data(client, response)
+
+        # Log the log object.
+        print(event.log)
 
     async def __handle_unauthorized_client(self, client: Connection, event: Event):
         """
@@ -93,8 +120,8 @@ class Waf:
         :return:
         """
         # Update the profile.
-        with self.__profile_handler as ph:
-            profile: Profile = ph.get_profile_by_hash(client.hash)
+        with self.__profile_manager as pm:
+            profile: Profile = pm.get_profile_by_hash(client.hash)
             profile_updates = {
                 "last_used_port": client.port,
                 "last_connection_time": get_epoch_time(),
@@ -102,9 +129,17 @@ class Waf:
                 "attempted_attacks": profile.attempted_attacks + 1,
                 "last_attempted_attack": ",".join(event.log.classifiers)
             }
-            ph.update_profile(client.hash, profile_updates)
+            pm.update_profile(client.hash, profile_updates)
 
-        # TODO: Check if the client is already banned and work on ban system.
+        # If this __handle is called, then client is not banned.
+        # Ban the client and set correct duration.
+        with self.__profile_manager as pm:
+            profile = pm.get_profile_by_hash(client.hash)
+
+        if profile.attempted_attacks > self.__config.banning["threshold"]:  # exceeded the threshold.
+            banned_at = get_epoch_time()
+            ban_duration = profile.attempted_attacks * self.__config.banning["factor"]
+            self.__ban_manager.insert_mapping(client.hash, banned_at, ban_duration)
 
         # Build a security page.
         further_information = ""
@@ -134,34 +169,6 @@ class Waf:
         # Log the log object.
         print(event.log)
 
-    async def __handle_authorized_client(self, client: Connection, event: Event):
-        """
-        Handles an authorized client.
-        :param client:
-        :param event:
-        :return:
-        """
-        # Update the profile.
-        with self.__profile_handler as ph:
-            profile_updates = {
-                "last_used_port": client.port,
-                "last_connection_time": get_epoch_time(),
-                "last_event": event,
-            }
-            ph.update_profile(client.hash, profile_updates)
-
-        # Connect to the web server.
-        stream = await AsyncStream.open_stream(*self.__target)
-        web_server = Connection(stream=stream, addr=HostAddress(*self.__target))
-
-        # Forward the clients request.
-        await forward_data(web_server, event.tx.raw)
-        response = await recv_from_server(web_server)
-        await forward_data(client, response)
-
-        # Log the log object.
-        print(event.log)
-
     async def __handle_connection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         """
         Handles each request by a single client.
@@ -171,9 +178,23 @@ class Waf:
         """
         client = Connection(stream=AsyncStream(reader, writer),
                             addr=HostAddress(*writer.get_extra_info(REMOTE_ADDR)))
-
-        # Insert a connection profile.
         self.__set_connection_profile(client)
+
+        if self.__ban_manager.banned(client.hash):
+            security_log = SecurityLog(
+                ip=client.ip,
+                port=client.port,
+                creation_date=get_unix_time(self.__config.timezone["timezone"]),
+                classifiers=[AttackClassifier.Banned_access],
+                geolocation=get_geoip_data(client.ip)
+            )
+            event = Event(
+                kind=UNAUTHORIZED_REQUEST,
+                id=tokenize(),
+                log=security_log,
+                tx=None
+            )
+            await self.__handle_unauthorized_client(client, event)
 
         access_list = self.__acl
         banned_countries = self.__config.geoip["banned_countries"]

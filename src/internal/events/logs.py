@@ -5,10 +5,11 @@ from src.proxy_network.geolocation import GeoData
 
 
 class AttackClassifier(StrEnum):
-    Unauthorized_access = "Unauthorized Access"
-    Sql_Injection = "Sql Injection"
-    Banned_Geolocation = "Banned Geolocation"
     Anonymity = "Anonymity"
+    Sql_Injection = "Sql Injection"
+    Unauthorized_access = "Unauthorized Access"
+    Banned_access = "Ongoing ban"
+    Banned_Geolocation = "Banned Geolocation"
 
 
 @dataclass(slots=True)

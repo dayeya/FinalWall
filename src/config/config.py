@@ -2,17 +2,8 @@ import tomllib
 from typing import Any
 from pathlib import Path
 
-ROOT_DIR = Path(__file__)
-CONFIG_FILE = "waf_cfg.toml"
-
-
-def full_path(file: str) -> Path:
-    """
-    Computes the absolute path of file based on the root dir.
-    :param file:
-    :return:
-    """
-    return ROOT_DIR.parent.joinpath(file)
+ROOT_DIR = Path(__file__).parent
+CONFIG_FILE = ROOT_DIR / "configuration.toml"
 
 
 def _parse_toml() -> dict:
@@ -21,7 +12,7 @@ def _parse_toml() -> dict:
     :return: dict
     """
     try:
-        with open(full_path(CONFIG_FILE), 'rb') as conf:
+        with open(CONFIG_FILE, 'rb') as conf:
             configuration: dict[str, Any] = tomllib.load(conf)
             return configuration
     except FileNotFoundError as _file_err:

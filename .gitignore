@@ -1,4 +1,4 @@
 .env/
 .vscode/
 .idea/
-src/events/profiles_db
+src/internal/core/profiles_db

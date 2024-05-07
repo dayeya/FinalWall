@@ -45,9 +45,9 @@ class AsyncStream:
         await self.__writer.wait_closed()
 
     @classmethod
-    async def open_stream(cls, ip: str, port: int) -> Self:
+    async def open_stream(cls, host: str, port: int) -> Self:
         try:
-            reader, writer = await asyncio.open_connection(host=ip, port=port)
+            reader, writer = await asyncio.open_connection(host=host, port=port)
             return cls(reader, writer)
         except OSError:
             print("ERROR: could not connect to the given ip and port.")
@@ -91,9 +91,9 @@ def convert_netloc(netloc: str) -> Union[Network_Address, None]:
     :return:
     """
     try:
-        ip, sep, port = netloc.rpartition(":")
+        ip_frag, sep, port = netloc.rpartition(":")
         assert sep, AssertionError
-        return ipaddress.ip_address(ip), int(port)
+        return ipaddress.ip_address(ip_frag), int(port)
 
     except AssertionError:
         # No port was specified.
@@ -106,13 +106,15 @@ def convert_netloc(netloc: str) -> Union[Network_Address, None]:
         return None
 
 
-def hash_by_ip(ip: str) -> bytes:
+def hash_by_host(host: str) -> str:
     """
     Creates a hash from an ip address.
-    :param ip:
+    :param host:
     :return:
     """
-    return hashlib.sha1(ip.encode("utf-8")).digest()
+    if not convert_netloc(host):
+        print(f"Hash_by_ip error. Expected a valid IP address, got {host}")
+    return hashlib.sha1(host.encode("utf-8")).hexdigest()
 
 
 __all__ = [
@@ -120,6 +122,6 @@ __all__ = [
     "AsyncStream",
     "create_new_task",
     "convert_netloc",
-    "hash_by_ip",
+    "hash_by_host",
     "REMOTE_ADDR",
 ]

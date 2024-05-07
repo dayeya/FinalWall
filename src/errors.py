@@ -38,32 +38,3 @@ class AclBackUpError(Exception):
     Raised when backup options for a fetching resource isn't available or not found.
     """
     pass
-
-
-class AttackDetected(Exception):
-    """
-    Raised when a Waf detects an attack.
-    """
-    pass
-
-
-# Warnings.
-
-
-class EntityShutdownWarning(Warning):
-    """
-    Raised when an IO operation was called upon a closed connection or entity.
-    """
-    pass
-
-
-class UnauthorizedClientFound(Warning):
-    """
-    Raised when a client was blocked and is now seeking their security page.
-    Note:
-        This warning is just for `jumping` reasons to handle sec page delivery.
-    """
-    def __init__(self, flags: int=0, token: str="", *args: tuple):
-        super().__init__(*args)
-        self.token = token
-        self.flags = flags
