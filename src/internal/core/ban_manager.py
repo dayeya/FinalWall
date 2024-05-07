@@ -37,7 +37,7 @@ class BanManager(metaclass=Singleton):
         if self.r.exists(client_hash):
             return
         successful_ops = self.r.hset(client_hash, mapping={
-            "time_of_ban": time_of_ban,
+            "banned_at": time_of_ban,
             "duration_remaining": ban_duration
         })
         if successful_ops != 2:  # Error with Redis.hset()
@@ -77,4 +77,4 @@ class BanManager(metaclass=Singleton):
             return False
         current_time = get_epoch_time()
         state = self.get_ban_state(client_hash)
-        return current_time - state["banned_at"] <= state["ban_duration"]
+        return current_time - state["banned_at"] <= state["duration_remaining"]
