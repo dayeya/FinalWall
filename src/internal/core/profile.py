@@ -5,6 +5,9 @@ from src.internal.events import Event
 
 @dataclass(slots=True)
 class Profile:
+    """
+    A class for representing the active profile of a client.
+    """
     host: str
     connection_date: str
     last_used_port: int

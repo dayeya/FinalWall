@@ -74,7 +74,52 @@
             font-size: var(--ff-size);
             font-family: var(--ff-main-font);
         }
+
+        .data {
+            width: calc(50vw); /* Adjust width to create margin on both sides */
+            display: flex;
+            justify-content: space-between;
+            margin: 0 auto; /* Center the container horizontally */
+        }
+
+        .token,
+        .ban_dur {
+            font-size: var(--ff-size);
+            font-family: var(--ff-main-font);
+            padding: 10px; /* Add padding for spacing around content */
+        }
+
+        .token {
+            color: var(--sec-color);
+        }
+
+        .ban_dur {
+            color: var(--sec-color);
+            text-align: right;
+        }
     </style>
+    <script>
+        String.prototype.toHHMMSS = function () {
+            var sec_num = parseInt(this, 10); // don't forget the second param
+            var hours   = Math.floor(sec_num / 3600);
+            var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
+            var seconds = sec_num - (hours * 3600) - (minutes * 60);
+
+            if (hours   < 10) {hours   = "0"+hours;}
+            if (minutes < 10) {minutes = "0"+minutes;}
+            if (seconds < 10) {seconds = "0"+seconds;}
+            return hours + ':' + minutes + ':' + seconds;
+        }
+
+        var time_left = {{ ban_duration }};
+        var downloadTimer = setInterval(function(){
+          if(time_left <= 0){
+            clearInterval(downloadTimer);
+          }
+          document.querySelector(".ban_dur").innerHTML = "Ban duration remaining " + time_left.toString().toHHMMSS();
+          time_left -= 1;
+        }, 1000);
+    </script>
 </head>
 <body>
     <div class="con">
@@ -84,10 +129,16 @@
 
         <p class="par">
             {% for line in further_information %}
-            {{ line }}<br>
+            {{ line }}
             {% endfor %}
+        </p>
         <br>
-        Activity token: {{ token }}
+        <div class="data">
+            <div class="token">Activity token: {{ token }}</div>
+            {% if ban_duration > 0 %}
+                <div class="ban_dur"></div>
+            {% endif %}
+        </div>
     </div>
 </body>
 </html>

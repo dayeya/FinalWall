@@ -139,6 +139,8 @@ class Waf:
         if profile.attempted_attacks > self.__config.banning["threshold"]:  # exceeded the threshold.
             banned_at = get_epoch_time()
             ban_duration = profile.attempted_attacks * self.__config.banning["factor"]
+            print(f"Banned at: {banned_at}, {type(banned_at)}")
+            print(f"Ban duration: {ban_duration}, {type(ban_duration)}")
             self.__ban_manager.insert_mapping(client.hash, banned_at, ban_duration)
 
         # Build a security page.
@@ -158,10 +160,15 @@ class Waf:
                 security_page_header = self.__config.securitypage["dirty_header"]
                 further_information = self.__config.securitypage["dirty_additional_info"]
 
+        # Get the current ban state.
+        state = self.__ban_manager.get_ban_state(client.hash)
+        duration_remaining = int(state.get("duration_remaining", -1))
+
         # Forward it.
         security_page: bytes = create_security_page(info={
             "header": security_page_header,
             "further_information": further_information,
+            "ban_duration": duration_remaining,
             "token": event.id
         })
         await forward_data(client, security_page)
