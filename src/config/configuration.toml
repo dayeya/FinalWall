@@ -24,7 +24,7 @@ interval = 1800 # 30 minutes
 
 [Banning]
 threshold = 3
-factor = 300 # 3600 1 hour. For testing -> 5 minutes.
+factor = 3600 # 1 hour.
 
 [GeoIP]
 banned_countries = ["Iran", "North Korea", "Palestine", "Syria", "Lebanon"]

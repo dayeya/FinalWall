@@ -133,21 +133,18 @@ class Waf:
 
         # If this __handle is called, then client is not banned.
         # Ban the client and set correct duration.
-        with self.__profile_manager as pm:
-            profile = pm.get_profile_by_hash(client.hash)
+        profile = self.__profile_manager.get_profile_by_hash(client.hash)
 
         if profile.attempted_attacks > self.__config.banning["threshold"]:  # exceeded the threshold.
             banned_at = get_epoch_time()
             ban_duration = profile.attempted_attacks * self.__config.banning["factor"]
-            print(f"Banned at: {banned_at}, {type(banned_at)}")
-            print(f"Ban duration: {ban_duration}, {type(ban_duration)}")
-            self.__ban_manager.insert_mapping(client.hash, banned_at, ban_duration)
+            self.__ban_manager.insert_mapping(client.hash, banned_at, float(ban_duration))
 
         # Build a security page.
         further_information = ""
         security_page_header = ""
         match event.log.classifiers:
-            case [AttackClassifier.Sql_Injection | AttackClassifier.Unauthorized_access]:
+            case [AttackClassifier.Sql_Injection | AttackClassifier.Unauthorized_access | AttackClassifier.Banned_access]:
                 security_page_header = self.__config.securitypage["attack_header"]
                 further_information = self.__config.securitypage["attack_additional_info"]
             case [AttackClassifier.Anonymity]:
@@ -160,15 +157,10 @@ class Waf:
                 security_page_header = self.__config.securitypage["dirty_header"]
                 further_information = self.__config.securitypage["dirty_additional_info"]
 
-        # Get the current ban state.
-        state = self.__ban_manager.get_ban_state(client.hash)
-        duration_remaining = int(state.get("duration_remaining", -1))
-
         # Forward it.
         security_page: bytes = create_security_page(info={
             "header": security_page_header,
             "further_information": further_information,
-            "ban_duration": duration_remaining,
             "token": event.id
         })
         await forward_data(client, security_page)
@@ -191,7 +183,7 @@ class Waf:
             security_log = SecurityLog(
                 ip=client.ip,
                 port=client.port,
-                creation_date=get_unix_time(self.__config.timezone["timezone"]),
+                creation_date=get_unix_time(self.__config.timezone["time_zone"]),
                 classifiers=[AttackClassifier.Banned_access],
                 geolocation=get_geoip_data(client.ip)
             )
@@ -202,6 +194,7 @@ class Waf:
                 tx=None
             )
             await self.__handle_unauthorized_client(client, event)
+            return
 
         access_list = self.__acl
         banned_countries = self.__config.geoip["banned_countries"]
@@ -212,7 +205,7 @@ class Waf:
             security_log = SecurityLog(
                 ip=client.ip,
                 port=client.port,
-                creation_date=get_unix_time(self.__config.timezone["timezone"]),
+                creation_date=get_unix_time(self.__config.timezone["time_zone"]),
                 classifiers=log_classifiers,
                 geolocation=get_geoip_data(client.ip)
             )

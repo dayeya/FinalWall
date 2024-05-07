@@ -46,15 +46,11 @@ class BanManager(metaclass=Singleton):
         :param banned_at:
         :return:
         """
-        # Set the keys and then retrieve the number of successful operations.
-        successful = self.r.hset(client_hash, key="banned_at", value=str(banned_at))
-        successful += self.r.hset(client_hash, key="duration_remaining", value=str(ban_duration))
-
-        if successful != 2:  # Error with Redis.hset()
-            self.log("Redis.hset() error. Not all values of given mapping were successfully inserted.")
+        self.r.hset(client_hash, key="banned_at", value=str(banned_at))
+        self.r.hset(client_hash, key="duration_remaining", value=str(ban_duration))
         self.r.expire(name=client_hash, time=int(ban_duration))
 
-    def get_ban_state(self, client_hash: str) -> dict:
+    def get_mapping(self, client_hash: str) -> dict:
         """
         Retrieves an entry from the cache.
         :param client_hash:
@@ -81,8 +77,18 @@ class BanManager(metaclass=Singleton):
         :param client_hash:
         :return:
         """
-        if not self.r.exists(client_hash):
-            return False
-        current_time = get_epoch_time()
-        state = self.get_ban_state(client_hash)
-        return current_time - state["banned_at"] <= state["duration_remaining"]
+        return self.r.exists(client_hash)
+
+
+if __name__ == "__main__":
+
+    bm = BanManager()
+    hashy = "14145d0b335424d93d9100b07ad16ec72a268511"
+    bm.insert_mapping(hashy, 1.0, 5.0)
+
+    print(bm.get_mapping(hashy))
+
+    import time
+    time.sleep(5.0)
+
+    print(bm.get_mapping(hashy))
