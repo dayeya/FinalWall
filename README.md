@@ -3,7 +3,7 @@ FinalWall is a public Open-Source Web application firewall module designed to be
 
 # Development
 FinalWall is developed using Python 3.12 so previous versions are not supported. However, I would think about supporting 3.10+.
-Blow are the milestones of the project:
+Below are the milestones of the project:
 
 - [ ] Cross-Platform
 - [X] Deploy FinalWall as a reverse proxy
