@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/NetGuard.iml" filepath="$PROJECT_DIR$/.idea/NetGuard.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/FinalWall.iml" filepath="$PROJECT_DIR$/.idea/FinalWall.iml" />
     </modules>
   </component>
 </project>

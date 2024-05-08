@@ -1,10 +1,11 @@
 import asyncio
 
-from ._types import Check, ANONYMOUS, GEOLOCATION
-from src.internal.signature_db import SignatureDb
-from src.internal.core._types import CheckResult
-from src.internal.core.transaction import Transaction
-from src.internal.events.logs import AttackClassifier
+from ..events import Classifier
+from ._types import Check, CheckResult, ANONYMOUS, GEOLOCATION
+
+from ..core.transaction import Transaction
+from ..signature_db import SignatureDb
+
 from src.http_process.headers import Header
 from src.net.aionetwork import create_new_task, convert_netloc, HostAddress
 from src.proxy_network.geolocation import validate_geoip_data
@@ -14,17 +15,17 @@ XFF_SEP = ","
 PAIR_SEPARATOR = ","
 
 
-def classify_by_flags(flags: int) -> list[AttackClassifier]:
+def classify_by_flags(flags: int) -> list[Classifier]:
     """
-    Classify the flags of a dirty_client_validation.
+    Classify flags to their corresponding classifier.
     :param flags:
     :return:
     """
     classifiers = []
     if flags & ANONYMOUS:
-        classifiers.append(AttackClassifier.Anonymity)
+        classifiers.append(Classifier.Anonymity)
     if flags & GEOLOCATION:
-        classifiers.append(AttackClassifier.Banned_Geolocation)
+        classifiers.append(Classifier.BannedGeolocation)
     return classifiers
 
 
@@ -93,12 +94,17 @@ def validate_dirty_client(ip: str, access_list: AccessList, banned_countries: li
 
 
 async def _check_path(tx: Transaction) -> CheckResult:
+    """
+    _check_path inspects the transactions URI
+    :param tx:
+    :return:
+    """
     async with asyncio.Lock():
         db: SignatureDb = SignatureDb()
         unauthorized_access = any({loc in tx.url.path for loc in db.unauthorized_access_data_set})
         if not unauthorized_access:
             return CheckResult(result=False, classifiers=[])
-        return CheckResult(result=True, classifiers=[AttackClassifier.Unauthorized_access])
+        return CheckResult(result=True, classifiers=[Classifier.UnauthorizedAccess])
 
 
 async def _check_sql_injection(tx: Transaction) -> CheckResult:
@@ -116,11 +122,11 @@ async def _check_sql_injection(tx: Transaction) -> CheckResult:
         for values in tx.query_params.values():
             for current_query_val in values:
                 if any(signature in current_query_val for signature in db.sql_data_set["general_keywords"]):
-                    return CheckResult(result=True, classifiers=[AttackClassifier.Sql_Injection])
+                    return CheckResult(result=True, classifiers=[Classifier.SqlInjection])
 
                 for keyword, pairs in db.sql_data_set["keywords_with_pairs"].items():
                     if keyword in current_query_val and _check_keyword_in_pairs(current_query_val, pairs):
-                        return CheckResult(result=True, classifiers=[AttackClassifier.Sql_Injection])
+                        return CheckResult(result=True, classifiers=[Classifier.SqlInjection])
         return CheckResult(result=False, classifiers=[])
 
 

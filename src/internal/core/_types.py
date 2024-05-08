@@ -1,10 +1,16 @@
 from typing import Callable
 from dataclasses import dataclass
 
-from src.internal.events.logs import AttackClassifier
+from ..events.classifier import Classifier
 
-ANONYMOUS = 0x00000002
-GEOLOCATION = 0x00000004
+
+SQL_INJECTION = 1
+XSS = 2
+FILE_INCLUSION = 3
+BRUTEFORCE = 4
+UNAUTHORIZED_ACCESS = 5
+ANONYMOUS = 6
+GEOLOCATION = 7
 
 
 @dataclass(slots=True)
@@ -27,4 +33,4 @@ class CheckResult:
     classifiers - If an attack is detected, the check function will return the classifier of the attack.
     """
     result: bool
-    classifiers: list[AttackClassifier]
+    classifiers: list[Classifier]

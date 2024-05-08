@@ -1,46 +1,38 @@
-from enum import StrEnum
 from dataclasses import dataclass
 from typing import Union, Optional
+
+from .classifier import Classifier
 from src.proxy_network.geolocation import GeoData
-
-
-class AttackClassifier(StrEnum):
-    Anonymity = "Anonymity"
-    Sql_Injection = "Sql Injection"
-    Unauthorized_access = "Unauthorized Access"
-    Banned_access = "Ongoing ban"
-    Banned_Geolocation = "Banned Geolocation"
-
-
-@dataclass(slots=True)
-class LogSettings:
-    downloadable: bool
 
 
 @dataclass(slots=True)
 class Log:
+    """
+    A basic class holding the basic fields that either a Security Log and an Access Log hold.
+    """
     ip: str
     port: int
+    download: bool
     creation_date: str
 
 
 @dataclass(slots=True)
 class SecurityLog(Log):
-    classifiers: list[AttackClassifier]
+    """
+    A log object that is created when a Waf instance detected a potential attack or threat.
+    """
+    classifiers: list[Classifier]
     geolocation: GeoData
     malicious_data: Optional[bytes] = None
     metadata: Optional[dict] = None
-    
-    # TODO: how to download the file (Create a download whole alert when hovering on the log).
-    # TODO: Data compression.
 
 
 @dataclass(slots=True)
 class AccessLog(Log):
+    """
+    A log object representing valid client transactions.
+    """
     pass
-    
-    # TODO: how to download the file (Create a download whole alert when hovering on the log).
-    # TODO: Data compression.
 
 
 type LogObject = Union[SecurityLog, AccessLog]

@@ -12,8 +12,9 @@ from time_utils import get_unix_time, get_epoch_time
 from net.connection import Connection, AsyncStream
 from net.aionetwork import create_new_task, HostAddress, REMOTE_ADDR
 
+from internal.events import Classifier
+from internal.events import SecurityLog, AccessLog
 from internal.events import Event, CONNECTION, AUTHORIZED_REQUEST, UNAUTHORIZED_REQUEST
-from internal.events import SecurityLog, AccessLog, AttackClassifier
 
 from internal.core.profile import Profile
 from internal.tokenization import tokenize
@@ -144,16 +145,16 @@ class Waf:
         further_information = ""
         security_page_header = ""
         match event.log.classifiers:
-            case [AttackClassifier.Sql_Injection | AttackClassifier.Unauthorized_access | AttackClassifier.Banned_access]:
+            case [Classifier.SqlInjection | Classifier.UnauthorizedAccess | Classifier.BannedAccess]:
                 security_page_header = self.__config.securitypage["attack_header"]
                 further_information = self.__config.securitypage["attack_additional_info"]
-            case [AttackClassifier.Anonymity]:
+            case [Classifier.Anonymity]:
                 security_page_header = self.__config.securitypage["anonymity_header"]
                 further_information = self.__config.securitypage["anonymity_additional_info"]
-            case [AttackClassifier.Banned_Geolocation]:
+            case [Classifier.BannedGeolocation]:
                 security_page_header = self.__config.securitypage["geo_header"]
                 further_information = self.__config.securitypage["geo_additional_info"]
-            case [AttackClassifier.Anonymity, AttackClassifier.Banned_Geolocation]:
+            case [Classifier.Anonymity, Classifier.BannedGeolocation]:
                 security_page_header = self.__config.securitypage["dirty_header"]
                 further_information = self.__config.securitypage["dirty_additional_info"]
 
@@ -183,8 +184,9 @@ class Waf:
             security_log = SecurityLog(
                 ip=client.ip,
                 port=client.port,
+                download=True,
                 creation_date=get_unix_time(self.__config.timezone["time_zone"]),
-                classifiers=[AttackClassifier.Banned_access],
+                classifiers=[Classifier.BannedAccess],
                 geolocation=get_geoip_data(client.ip)
             )
             event = Event(
@@ -205,6 +207,7 @@ class Waf:
             security_log = SecurityLog(
                 ip=client.ip,
                 port=client.port,
+                download=True,
                 creation_date=get_unix_time(self.__config.timezone["time_zone"]),
                 classifiers=log_classifiers,
                 geolocation=get_geoip_data(client.ip)
@@ -235,6 +238,7 @@ class Waf:
             security_log = SecurityLog(
                 ip=client.ip,
                 port=client.port,
+                download=True,
                 creation_date=get_unix_time(self.__config.timezone["time_zone"]),
                 classifiers=check_result.classifiers,
                 geolocation=get_geoip_data(client.ip)
@@ -251,6 +255,7 @@ class Waf:
         access_log = AccessLog(
             ip=client.ip,
             port=client.port,
+            download=True,
             creation_date=get_unix_time(self.__config.timezone["time_zone"])
         )
         event = Event(
