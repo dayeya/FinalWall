@@ -6,7 +6,7 @@ class Classifier(StrEnum):
     Classifier is a part of the classification process of each Security Log. It tells the Waf why the event was triggered.
     Additionally, a classifier is the vulnerability identifier and the rationale behind the BLOCK action.
 
-    Enum variants
+    Variants
     -------------
     Sql Injection - The transaction showed signs of SQL signatures.
     XSS - The transaction showed signs of XSS signatures.
@@ -16,6 +16,9 @@ class Classifier(StrEnum):
     Anonymity - The transactions owner identifies with a banned software such as TOR.
     """
     SqlInjection = "Sql Injection"
+    XSS = "Cross Site Scripting"
+    RFI = "Remote File Inclusion"
+    LFI = "Local File Inclusion"
     UnauthorizedAccess = "Unauthorized Access"
     BannedAccess = "Banned"
     BannedGeolocation = "Banned Geolocation"

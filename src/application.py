@@ -145,7 +145,7 @@ class Waf:
         further_information = ""
         security_page_header = ""
         match event.log.classifiers:
-            case [Classifier.SqlInjection | Classifier.UnauthorizedAccess | Classifier.BannedAccess]:
+            case [Classifier.SqlInjection | Classifier.XSS | Classifier.UnauthorizedAccess | Classifier.BannedAccess]:
                 security_page_header = self.__config.securitypage["attack_header"]
                 further_information = self.__config.securitypage["attack_additional_info"]
             case [Classifier.Anonymity]:
