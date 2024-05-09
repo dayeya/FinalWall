@@ -15,18 +15,12 @@ XFF_SEP = ","
 PAIR_SEPARATOR = ","
 
 
-def classify_by_flags(flags: int) -> list[Classifier]:
+def __encapsulated(a, b) -> bool:
     """
-    Classify flags to their corresponding classifier.
-    :param flags:
-    :return:
+    Checks for encapsulation state of `a` and `b`.
+    This function is called when checking if a signature is inside a value or otherwise.
     """
-    classifiers = []
-    if flags & ANONYMOUS:
-        classifiers.append(Classifier.Anonymity)
-    if flags & GEOLOCATION:
-        classifiers.append(Classifier.BannedGeolocation)
-    return classifiers
+    return a in b or b in a
 
 
 async def __validate_ip_address(ip: str, access_list: AccessList, banned_countries: list) -> str | None:
@@ -45,7 +39,21 @@ async def __validate_ip_address(ip: str, access_list: AccessList, banned_countri
     return ip
 
 
-async def _validate_xff(tx: Transaction, access_list: AccessList, banned_countries) -> CheckResult:
+def classify_by_flags(flags: int) -> list[Classifier]:
+    """
+    Classify flags to their corresponding classifier.
+    :param flags:
+    :return:
+    """
+    classifiers = []
+    if flags & ANONYMOUS:
+        classifiers.append(Classifier.Anonymity)
+    if flags & GEOLOCATION:
+        classifiers.append(Classifier.BannedGeolocation)
+    return classifiers
+
+
+async def validate_xff(tx: Transaction, access_list: AccessList, banned_countries) -> CheckResult:
     """
     Validates the xff header (if any) of a transaction.
     :param tx:
@@ -93,9 +101,9 @@ def validate_dirty_client(ip: str, access_list: AccessList, banned_countries: li
     return result
 
 
-async def _check_path(tx: Transaction) -> CheckResult:
+async def check_path(tx: Transaction) -> CheckResult:
     """
-    _check_path inspects the transactions URI
+    Validates the transactions request URI namely `tx.url.path` by checking if it`s a banned resource or not.
     :param tx:
     :return:
     """
@@ -107,16 +115,36 @@ async def _check_path(tx: Transaction) -> CheckResult:
         return CheckResult(result=True, classifiers=[Classifier.UnauthorizedAccess])
 
 
-async def _check_sql_injection(tx: Transaction) -> CheckResult:
-    def _check_keyword_in_pairs(value: str, _pairs: list) -> bool:
+async def check_sql_injection(tx: Transaction) -> CheckResult:
+    """
+    Validates some areas of the transaction that potentially carry SQLi signatures.
+    Checks for lone SQLi signatures and for paired ones.
+    """
+    def _check_keyword_in_pairs(param: str, _pairs: list) -> bool:
+        """
+        Simple helper function called when checking for pairs of SQLi signatures.
+
+        Suppose we have the following URI:
+
+            http:<ip>:<port>/register?=username=`UNION SELECT * FROM))`
+
+        Here, `SELECT` is paired with `UNION`, `*` and `FROM`.
+        """
         single_pairs: set = set(filter(lambda p: PAIR_SEPARATOR not in p, _pairs))
         multiple_pairs: set = set(filter(lambda p: PAIR_SEPARATOR in p, _pairs))
-        if any(p in value for p in single_pairs):
+        if any(p in param for p in single_pairs):
             return True
-        if any({all(sub_pair in value for sub_pair in p.split(PAIR_SEPARATOR)) for p in multiple_pairs}):
+        if any({all(sub_pair in param for sub_pair in p.split(PAIR_SEPARATOR)) for p in multiple_pairs}):
             return True
         return False
 
+    # Check for context escaping chars.
+    for values in tx.query_params.values():
+        for value in values:
+            if value.startswith("`"):
+                return CheckResult(result=True, classifiers=[Classifier.SqlInjection])
+
+    # Signature checking.
     async with asyncio.Lock():
         db: SignatureDb = SignatureDb()
         for values in tx.query_params.values():
@@ -130,15 +158,29 @@ async def _check_sql_injection(tx: Transaction) -> CheckResult:
         return CheckResult(result=False, classifiers=[])
 
 
+async def check_xss(tx: Transaction) -> CheckResult:
+    """
+    Validates some areas of the transaction that potentially carry XSS signatures.
+    """
+    async with asyncio.Lock():
+        db: SignatureDb = SignatureDb()
+        for values in tx.query_params.values():
+            for current_query_val in values:
+                if any(__encapsulated(current_query_val, signature) for signature in db.xss_data_set):
+                    return CheckResult(result=True, classifiers=[Classifier.XSS])
+        return CheckResult(result=False, classifiers=[])
+
+
 async def check_transaction(tx: Transaction, access_list: AccessList, banned_countries: list) -> CheckResult:
     """
-    Analyzes a transaction for several vulnerabilities.
+    Analyzes a transaction for several vulnerabilities by performing checks.
     :returns: CheckResult
     """
     checks = [
-        Check(fn=_validate_xff, args=(tx, access_list, banned_countries)),
-        Check(fn=_check_path, args=(tx,)),
-        Check(fn=_check_sql_injection, args=(tx,))
+        Check(fn=validate_xff, args=(tx, access_list, banned_countries)),
+        Check(fn=check_path, args=(tx,)),
+        Check(fn=check_sql_injection, args=(tx,)),
+        Check(fn=check_xss, args=(tx,))
     ]
 
     work = [create_new_task(task=check.fn, args=check.args) for check in checks]

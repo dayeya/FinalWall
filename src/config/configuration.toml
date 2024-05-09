@@ -38,7 +38,7 @@ time_zone = "Asia/Jerusalem"
 
 # General attack info.
 attack_header = "Wrongful behavior detected."
-attack_additional_info = ["Your activity log was sent to our administration team and is investigated."]
+attack_additional_info = ["Your activity log was sent to our administration team and is being investigated."]
 
 # Info regarding banned software.
 anonymity_header = "We have detected usage of anonymization software."
