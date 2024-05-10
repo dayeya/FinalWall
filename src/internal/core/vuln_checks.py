@@ -1,7 +1,9 @@
 import asyncio
+from typing import Callable
 
 from ..events import Classifier
-from ._types import Check, CheckResult, ANONYMOUS, GEOLOCATION
+from ._types import Check, CheckResult
+from ._types import SQL_INJECTION, XSS, LFI, RFI, BRUTEFORCE, UNAUTHORIZED_ACCESS, ANONYMOUS, GEOLOCATION
 
 from ..core.transaction import Transaction
 from ..signature_db import SignatureDb
@@ -23,6 +25,17 @@ def __encapsulated(a, b) -> bool:
     return a in b or b in a
 
 
+def __case_sensitive(condition: Callable, *args) -> bool:
+    """
+    Wrapper function that executes `condition` on *args in its str.lower() and str.upper() form.
+    This handles cases where input is in lower and upper form.
+    """
+    if any(not isinstance(arg, str) for arg in args):
+        print("Bad arguments for __case_sensitive!")
+    upper, lower = [arg.upper() for arg in args], [arg.lower() for arg in args]
+    return condition(*upper) or condition(*lower)
+
+
 async def __validate_ip_address(ip: str, access_list: AccessList, banned_countries: list) -> str | None:
     """
     Validates a single ip address.
@@ -41,11 +54,23 @@ async def __validate_ip_address(ip: str, access_list: AccessList, banned_countri
 
 def classify_by_flags(flags: int) -> list[Classifier]:
     """
-    Classify flags to their corresponding classifier.
+    Classify flags to their corresponding classifiers.
     :param flags:
     :return:
     """
     classifiers = []
+    if flags & SQL_INJECTION:
+        classifiers.append(Classifier.SqlInjection)
+    if flags & XSS:
+        classifiers.append(Classifier.XSS)
+    if flags & LFI:
+        classifiers.append(Classifier.LFI)
+    if flags & RFI:
+        classifiers.append(Classifier.RFI)
+    if flags & BRUTEFORCE:
+        classifiers.append(BRUTEFORCE)
+    if flags & UNAUTHORIZED_ACCESS:
+        classifiers.append(Classifier.UnauthorizedAccess)
     if flags & ANONYMOUS:
         classifiers.append(Classifier.Anonymity)
     if flags & GEOLOCATION:
@@ -149,11 +174,11 @@ async def check_sql_injection(tx: Transaction) -> CheckResult:
         db: SignatureDb = SignatureDb()
         for values in tx.query_params.values():
             for current_query_val in values:
-                if any(signature in current_query_val for signature in db.sql_data_set["general_keywords"]):
+                if any(__case_sensitive(lambda a, b: a in b, sig, current_query_val) for sig in db.sql_data_set["general_keywords"]):
                     return CheckResult(result=True, classifiers=[Classifier.SqlInjection])
 
                 for keyword, pairs in db.sql_data_set["keywords_with_pairs"].items():
-                    if keyword in current_query_val and _check_keyword_in_pairs(current_query_val, pairs):
+                    if __case_sensitive(lambda a, b: a in b, keyword, current_query_val) and _check_keyword_in_pairs(current_query_val, pairs):
                         return CheckResult(result=True, classifiers=[Classifier.SqlInjection])
         return CheckResult(result=False, classifiers=[])
 
