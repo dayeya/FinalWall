@@ -6,11 +6,12 @@ from ..events.classifier import Classifier
 
 SQL_INJECTION = 1
 XSS = 2
-FILE_INCLUSION = 3
-BRUTEFORCE = 4
-UNAUTHORIZED_ACCESS = 5
-ANONYMOUS = 6
-GEOLOCATION = 7
+LFI = 3
+RFI = 4
+BRUTEFORCE = 5
+UNAUTHORIZED_ACCESS = 6
+ANONYMOUS = 7
+GEOLOCATION = 8
 
 
 @dataclass(slots=True)

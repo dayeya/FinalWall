@@ -14,7 +14,7 @@ Below are the milestones of the project:
 - [X] Signature based attack detection
 - [X] Sqli
 - [X] Unauthorized Access
-- [ ] Xss
+- [X] Xss
 - [ ] Bruteforce
 - [ ] File inclusion
 - [ ] Rate limiting
