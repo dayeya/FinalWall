@@ -13,7 +13,6 @@ async def main():
         WAF_ACL_LOOP: Background task that updates the ACL (access list) once every interval.
     :return: None
     """
-
     conf = WafConfig()
     waf = Waf(conf=conf)
     await waf.deploy()
