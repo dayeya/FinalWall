@@ -1,8 +1,8 @@
 from typing import Union
 from dataclasses import dataclass, field
 from urllib.parse import ParseResultBytes
-from src.net.aionetwork import HostAddress
-from src.http_process.process import process_request_line, process_headers_and_body, process_query
+from engine.net.aionetwork import HostAddress
+from engine.http_process.process import process_request_line, process_headers_and_body, process_query
 
 
 class Method:

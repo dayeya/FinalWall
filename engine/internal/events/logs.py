@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Union, Optional
 
 from .classifier import Classifier
-from src.proxy_network.geolocation import GeoData
+from engine.proxy_network.geolocation import GeoData
 
 
 @dataclass(slots=True)

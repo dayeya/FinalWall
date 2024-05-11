@@ -1,4 +1,4 @@
 .env/
 .vscode/
 .idea
-src/internal/core/profiles_db
+engine/internal/core/profiles_db

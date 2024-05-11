@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-from src.internal.core.transaction import Transaction
-from src.internal.events.logs import LogObject
+from engine.internal.core.transaction import Transaction
+from engine.internal.events.logs import LogObject
 
 CONNECTION = "Connection"
 DISCONNECTION = "Disconnection"

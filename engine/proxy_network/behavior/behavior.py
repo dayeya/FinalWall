@@ -1,7 +1,7 @@
 from typing import Callable
 
-from src.net.connection import Connection
-from src.http_process import SearchContext, search_header, contains_body_seperator
+from engine.net.connection import Connection
+from engine.http_process import SearchContext, search_header, contains_body_seperator
 
 __doc__ = """behavior.py defines functions with similar functionality that of a proxy."""
 

@@ -2,8 +2,8 @@ import sqlite3
 from pathlib import Path
 from typing import Union
 
-from src.internal.core.profile import Profile
-from src.components import Singleton
+from engine.internal.core.profile import Profile
+from engine.components import Singleton
 
 ROOT_PATH = Path(__file__).parent
 

@@ -1,29 +1,29 @@
 import asyncio
 from enum import Enum
-from errors import StateError, VersionError
 
-from proxy_network.anonymity import AccessList
-from proxy_network.geolocation import get_geoip_data
-from proxy_network.behavior import recv_from_client, forward_data, recv_from_server
+from engine.errors import StateError
+from engine.config import WafConfig
 
-from config import WafConfig
-from time_utils import get_unix_time, get_epoch_time
+from engine.time_utils import get_unix_time, get_epoch_time
 
-from net.connection import Connection, AsyncStream
-from net.aionetwork import create_new_task, HostAddress, REMOTE_ADDR
+from engine.proxy_network.anonymity import AccessList
+from engine.proxy_network.geolocation import get_geoip_data
+from engine.proxy_network.behavior import recv_from_client, forward_data, recv_from_server
 
-from internal.events import Classifier
-from internal.events import SecurityLog, AccessLog
-from internal.events import Event, CONNECTION, AUTHORIZED_REQUEST, UNAUTHORIZED_REQUEST
+from engine.net.connection import Connection, AsyncStream
+from engine.net.aionetwork import HostAddress, REMOTE_ADDR
 
-from internal.core.profile import Profile
-from internal.tokenization import tokenize
-from internal.signature_db import SignatureDb
-from internal.core.ban_manager import BanManager
-from internal.core.transaction import Transaction
-from internal.core.profile_manager import ProfileManager
-from internal.core.blocking.block import create_security_page
-from internal.core.vuln_checks import check_transaction, validate_dirty_client, classify_by_flags
+from engine.internal.events import Classifier
+from engine.internal.events import SecurityLog, AccessLog
+from engine.internal.events import Event, CONNECTION, AUTHORIZED_REQUEST, UNAUTHORIZED_REQUEST
+from engine.internal.core.profile import Profile
+from engine.internal.tokenization import tokenize
+from engine.internal.signature_db import SignatureDb
+from engine.internal.core.ban_manager import BanManager
+from engine.internal.core.transaction import Transaction
+from engine.internal.core.profile_manager import ProfileManager
+from engine.internal.core.blocking.block import create_security_page
+from engine.internal.core.vuln_checks import check_transaction, validate_dirty_client, classify_by_flags
 
 
 class _WafState(Enum):
@@ -42,6 +42,11 @@ class Waf:
     Protects a *single* entity in the network.
     """
     def __init__(self, conf: WafConfig) -> None:
+        try:
+            SignatureDb()
+        except Exception as _database_loading_err:
+            print("ERROR: could not initialize database due:", _database_loading_err)
+
         self.__config = conf
         self.__server = None
         self.__ban_manager = BanManager()
@@ -338,40 +343,3 @@ class Waf:
         await self.__server.wait_closed()
         self.__state = _WafState.CLOSED
         print("INFO: Waf closed")
-
-
-async def main():
-    """
-    Main entry point of program. the start of the Asyncio.Eventloop.
-    Generated coroutines:
-        WAF_WORK: Main work of the Waf instance.
-        WAF_ACL_LOOP: Background task that updates the ACL (access list) once every interval.
-    :return: None
-    """
-    try:
-        SignatureDb()
-    except Exception as _database_loading_err:
-        print("ERROR: could not initialize database due:", _database_loading_err)
-
-    conf = WafConfig()
-    waf = Waf(conf=conf)
-    await waf.deploy()
-
-    work = [
-        create_new_task(task_name="WAF_WORK", task=waf.work, args=()),
-        create_new_task(task_name="WAF_ACL_LOOP", task=waf.start_acl_loop, args=())
-    ]
-    await asyncio.gather(*work)
-
-
-if __name__ == "__main__":
-    import tracemalloc
-
-    tracemalloc.start()
-
-    import sys
-
-    if sys.version_info[0:2] != (3, 12):
-        raise VersionError("Wrong python version. Please use +=3.12 only")
-
-    asyncio.run(main())

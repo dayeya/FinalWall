@@ -1,7 +1,7 @@
 import json
 from enum import Enum
 from pathlib import Path
-from src.components import Singleton
+from engine.components import Singleton
 
 ROOT_FOLDER = "signatures"
 

@@ -1,6 +1,6 @@
 import pickle
 from dataclasses import dataclass
-from src.internal.events import Event
+from engine.internal.events import Event
 
 
 @dataclass(slots=True)

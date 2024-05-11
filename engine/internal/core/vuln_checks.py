@@ -8,10 +8,10 @@ from ._types import SQL_INJECTION, XSS, LFI, RFI, BRUTEFORCE, UNAUTHORIZED_ACCES
 from ..core.transaction import Transaction
 from ..signature_db import SignatureDb
 
-from src.http_process.headers import Header
-from src.net.aionetwork import create_new_task, convert_netloc, HostAddress
-from src.proxy_network.geolocation import validate_geoip_data
-from src.proxy_network.anonymity import AccessList, validate_anonymity_from_ip
+from engine.http_process.headers import Header
+from engine.net.aionetwork import create_new_task, convert_netloc, HostAddress
+from engine.proxy_network.geolocation import validate_geoip_data
+from engine.proxy_network.anonymity import AccessList, validate_anonymity_from_ip
 
 XFF_SEP = ","
 PAIR_SEPARATOR = ","

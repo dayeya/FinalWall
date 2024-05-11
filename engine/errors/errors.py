@@ -38,3 +38,13 @@ class AclBackUpError(Exception):
     Raised when backup options for a fetching resource isn't available or not found.
     """
     pass
+
+
+__all__ = [
+    "VersionError",
+    "StateError",
+    "EntityShutdown",
+    "WebServerOffline",
+    "AclFetchError",
+    "AclBackUpError"
+]

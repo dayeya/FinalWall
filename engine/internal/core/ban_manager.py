@@ -1,7 +1,7 @@
 import redis
-from src.time_utils import get_epoch_time
+from engine.time_utils import get_epoch_time
 
-from src.components.singleton import Singleton
+from engine.components.singleton import Singleton
 
 
 class BanManager(metaclass=Singleton):
@@ -78,17 +78,3 @@ class BanManager(metaclass=Singleton):
         :return:
         """
         return self.r.exists(client_hash)
-
-
-if __name__ == "__main__":
-
-    bm = BanManager()
-    hashy = "14145d0b335424d93d9100b07ad16ec72a268511"
-    bm.insert_mapping(hashy, 1.0, 5.0)
-
-    print(bm.get_mapping(hashy))
-
-    import time
-    time.sleep(5.0)
-
-    print(bm.get_mapping(hashy))

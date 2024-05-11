@@ -1,4 +1,4 @@
-from src.proxy_network.anonymity.acl import AccessList
+from engine.proxy_network.anonymity.acl import AccessList
 
 
 def validate_anonymity_from_ip(ip: str, access_list: AccessList) -> bool:
