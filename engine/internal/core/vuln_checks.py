@@ -191,7 +191,7 @@ async def check_xss(tx: Transaction) -> CheckResult:
         db: SignatureDb = SignatureDb()
         for values in tx.query_params.values():
             for current_query_val in values:
-                if any(__encapsulated(current_query_val, signature) for signature in db.xss_data_set):
+                if any(__encapsulated(current_query_val, signature) for signature in db.xss_data_set["keywords"]):
                     return CheckResult(result=True, classifiers=[Classifier.XSS])
         return CheckResult(result=False, classifiers=[])
 
