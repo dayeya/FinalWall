@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="C:\coding\FinalWall\web\frontend\src\assets\fwbanner.png">
+    <img src="https://github.com/dayeya/FinalWall/blob/main/web/frontend/src/assets/fwbanner.png">
 </div>
 
 FinalWall is a lightweight Web Application Firewall engine for the community developed for research and learning purposes.
