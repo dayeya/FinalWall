@@ -1,5 +1,8 @@
-# FinalWall
-FinalWall is a public Open-Source Web application firewall module designed to be robust and secure for the community.
+<div align="center">
+    <img src="C:\coding\FinalWall\web\frontend\src\assets\fwbanner.png">
+</div>
+
+FinalWall is a lightweight Web Application Firewall engine for the community developed for research and learning purposes.
 
 # Development
 FinalWall is developed using Python 3.12 so previous versions are not supported. However, I would think about supporting 3.10+.
