@@ -1,8 +1,10 @@
 <div align="center">
-    <img src="https://github.com/dayeya/FinalWall/blob/main/web/frontend/src/assets/fwbanner.png">
+    <img src="https://github.com/dayeya/FinalWall/blob/main/web/frontend/src/assets/fwbanner.png"><br>
 </div>
-
-FinalWall is a lightweight Web Application Firewall engine for the community developed for research and learning purposes.
+<hr>
+<br>
+FinalWall is a Web Application Firewall engine that is open source, lightweight, and robust built with Python.<br>
+This project is built for research and learning purposes but has the aim of expanding its capabilities with the help of the community!
 
 # Development
 FinalWall is developed using Python 3.12 so previous versions are not supported. However, I would think about supporting 3.10+.
@@ -14,12 +16,12 @@ Below are the milestones of the project:
 - [X] Client source control
 - [X] Client profiling
 - [X] ACL
-- [X] Signature based attack detection
+- [X] Signature-based attack detection
 - [X] Sqli
 - [X] Unauthorized Access
 - [X] Xss
 - [ ] Bruteforce
-- [ ] File inclusion
+- [ ] File Inclusion
 - [ ] Rate limiting
 - [ ] Simulations directory
 - [ ] UI
@@ -33,14 +35,14 @@ Future milestones include:
 # Models and structure
 The core engine of FinalWall is built from several models each of which takes on a variety of roles that ultimately make the system itself. 
 Below are some of them: *Transactions, Events, 
-Logs, Checks, Classifiers, Streams, SearchContexts, ProfileManager and BanManager* are all a part of the core engine FinalWall is built on.
+Logs, Checks, Classifiers, Streams, SearchContexts, ProfileManager, and BanManager* are all a part of the core engine FinalWall is built on.
 
 # Contributions
 As for  the final release, FinalWall was built only by Dayeya as opposed to the contributors list.<br>
-*For upcoming releases and contribution* feel free to help with any area you are comfortable with: features, bug fixes,
-reports, documentation and so on.
+*For upcoming releases and contributions* feel free to help with any area you are comfortable with: features, bug fixes,
+reports, documentation, and so on.
 
 ## How to do it?
-Having an idea for the project? Found a performance error? Or just want to discuss? Open an issue!<br>
-Want to write you own features or solutions to open issues? Open a PR and I will look into it.<br>
+Having an idea for the project? Found a performance error? Or just want to chat? Open an issue!<br>
+Want to write your features or solutions to open issues? Open a PR and I will look into it.<br>
 Additionally, I would love to chat with anyone interested in the project so feel free to contact me on any platform you like.
