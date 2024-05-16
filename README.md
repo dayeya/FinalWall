@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="https://github.com/dayeya/FinalWall/blob/main/web/frontend/src/assets/fwbanner.png"><br>
+    <svg src=""><br>
 </div>
 <hr>
 <br>
