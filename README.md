@@ -1,13 +1,14 @@
 <div align="center">
     <img src="https://github.com/dayeya/FinalWall/blob/main/web/frontend/src/assets/fwlogo.svg"/><br>
+    <h1>FinalWall - An open-source web application firewall engine</h1>
 </div>
-<hr>
-<br>
-FinalWall is a Web Application Firewall engine that is open source, lightweight, and robust built with Python.<br>
-This project is built for research and learning purposes but has the aim of expanding its capabilities with the help of the community!
+Finalwall is an open-source WAF engine that is reliable, robust, and easy to use.
+The engine provides significant models that make threat mitigation and network analysis easy.
+
+# Installation
 
 # Development
-FinalWall is developed using Python 3.12 so previous versions are not supported. However, I would think about supporting 3.10+.
+FinalWall is developed using Python 3.12 so previous versions are not supported. However, I suggest supporting 3.10+.
 Below are the milestones of the project:
 
 - [ ] Cross-Platform
