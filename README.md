@@ -1,5 +1,5 @@
 <div align="center">
-    <svg src=""><br>
+    <svg src="https://github.com/dayeya/FinalWall/blob/main/web/frontend/src/assets/fwlogo.svg"/><br>
 </div>
 <hr>
 <br>
