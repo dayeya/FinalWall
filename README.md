@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="https://github.com/dayeya/FinalWall/blob/main/web/frontend/src/assets/fwlogo.svg"/><br>
+    <img src="https://github.com/dayeya/FinalWall/blob/main/web/frontend/src/assets/fwlogo.svg" width="30%" height="30%"/><br>
     <h1>FinalWall - An open-source web application firewall engine</h1>
 </div>
 Finalwall is an open-source WAF engine that is reliable, robust, and easy to use.
