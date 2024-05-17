@@ -16,9 +16,11 @@ from engine.net.aionetwork import HostAddress, REMOTE_ADDR
 from engine.internal.events import Classifier
 from engine.internal.events import SecurityLog, AccessLog
 from engine.internal.events import Event, CONNECTION, AUTHORIZED_REQUEST, UNAUTHORIZED_REQUEST
-from engine.internal.core.profile import Profile
+
 from engine.internal.tokenization import tokenize
 from engine.internal.signature_db import SignatureDb
+
+from engine.internal.core.profile import Profile
 from engine.internal.core.ban_manager import BanManager
 from engine.internal.core.transaction import Transaction
 from engine.internal.core.profile_manager import ProfileManager

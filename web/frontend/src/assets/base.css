@@ -1,22 +1,21 @@
-:root {
-  --bg-color: #191826;
-  --main-fg-color: #4a6fb5;
-}
 
+:root {
+  --nav-bg-color: #162447;
+  --primary-fc: #EEEEEE;
+
+  --brand-fz: 1em;
+  --primary-ff: sans-serif;
+}
 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
   margin: 0;
-  position: relative;
-  font-weight: normal;
 }
 
 body {
-  background: var(--bg-color);
   min-height: 100vh;
-  line-height: 1.6;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
