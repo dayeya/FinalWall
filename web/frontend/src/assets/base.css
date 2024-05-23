@@ -1,10 +1,16 @@
 
 :root {
   --nav-bg-color: #162447;
+  --menu-bg-color: #5a6063;
   --primary-fc: #EEEEEE;
+  --secondary-fc: #000000;
 
-  --brand-fz: 1em;
+  --brand-fz: 1.2em;
   --primary-ff: sans-serif;
+
+  /* Animations */
+  --tx-bg-color: #4b5052;
+  --transition-menu-bar-select: 200ms ease-out;
 }
 
 *,

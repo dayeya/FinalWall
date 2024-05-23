@@ -7,6 +7,7 @@ import asyncio
 import hashlib
 import ipaddress
 import threading
+from functools import wraps
 from dataclasses import dataclass
 from typing import Tuple, Callable, Union, Self
 
@@ -66,7 +67,20 @@ class AsyncStream:
         return data
 
 
-def create_new_thread(func: Callable, args: tuple, daemon: bool) -> threading.Thread:
+def looper(func: Callable):
+    """
+    Decorator for running important functions in their own event loop.
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs) -> None:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(func(*args, **kwargs))
+        loop.close()
+    return wrapper
+
+
+def create_new_thread(func: Callable, args: tuple, daemon: bool=False) -> threading.Thread:
     """
     Creates a local thread.
     :returns: Thread.
@@ -120,7 +134,9 @@ def hash_by_host(host: str) -> str:
 __all__ = [
     "HostAddress",
     "AsyncStream",
+    "looper",
     "create_new_task",
+    "create_new_thread",
     "convert_netloc",
     "hash_by_host",
     "REMOTE_ADDR",

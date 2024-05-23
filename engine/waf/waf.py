@@ -1,4 +1,5 @@
 import asyncio
+import threading
 from enum import Enum
 
 from engine.errors import StateError
@@ -43,12 +44,13 @@ class Waf:
     A class representing a Web application firewall.
     Protects a *single* entity in the network.
     """
-    def __init__(self, conf: WafConfig) -> None:
+    def __init__(self, ucid: int, conf: WafConfig) -> None:
         try:
             SignatureDb()
         except Exception as _database_loading_err:
             print("ERROR: could not initialize database due:", _database_loading_err)
 
+        self.__ucid = ucid
         self.__config = conf
         self.__server = None
         self.__ban_manager = BanManager()
@@ -63,6 +65,10 @@ class Waf:
         print(f"INFO: Waf created")
 
     @property
+    def ucid(self) -> int:
+        return self.__ucid
+
+    @property
     def state(self) -> _WafState:
         return self.__state
 
@@ -73,6 +79,10 @@ class Waf:
     @property
     def target(self) -> tuple[str, int]:
         return self.__target
+
+    @property
+    def address(self) -> tuple[str, int]:
+        return self.__address
 
     def __set_connection_profile(self, client: Connection):
         """
@@ -92,6 +102,7 @@ class Waf:
         )
         with self.__profile_manager as pm:
             pm.insert_profile(client.hash, profile)
+        print("Entered a connection profile.")
 
     async def __handle_authorized_client(self, client: Connection, event: Event):
         """
@@ -187,6 +198,7 @@ class Waf:
                             addr=HostAddress(*writer.get_extra_info(REMOTE_ADDR)))
         self.__set_connection_profile(client)
 
+        print("Before ban check.")
         if self.__ban_manager.banned(client.hash):
             security_log = SecurityLog(
                 ip=client.ip,
@@ -207,6 +219,8 @@ class Waf:
 
         access_list = self.__acl
         banned_countries = self.__config.geoip["banned_countries"]
+
+        print("Before flags.")
         flags = validate_dirty_client(client.ip, access_list, banned_countries)
 
         if flags != 0:
@@ -239,6 +253,8 @@ class Waf:
 
         access_list = self.__acl
         banned_countries = self.__config.geoip["banned_countries"]
+
+        print("Before check_transaction.")
         check_result = await check_transaction(tx, access_list, banned_countries)
 
         if check_result.result:
@@ -259,6 +275,7 @@ class Waf:
             await self.__handle_unauthorized_client(client, event)
             return
 
+        print("A good client.")
         access_log = AccessLog(
             ip=client.ip,
             port=client.port,

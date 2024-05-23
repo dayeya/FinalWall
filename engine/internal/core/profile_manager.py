@@ -2,6 +2,7 @@ import sqlite3
 from pathlib import Path
 from typing import Union
 
+from engine.internal.events import Event
 from engine.internal.core.profile import Profile
 from engine.components import Singleton
 
@@ -22,7 +23,7 @@ class ProfileManager(metaclass=Singleton):
         self.conn = conn
         self.cursor = self.conn.cursor()
 
-    def insert_profile(self, client_hash: str, profile: Profile):
+    def insert_profile(self, client_hash: str, profile: Profile) -> None:
         """
         Inserts a profile mapped by the hash into the db.
         :param client_hash: str

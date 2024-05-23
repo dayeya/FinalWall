@@ -12,11 +12,11 @@ class Connection:
     addr: HostAddress
 
     @property
-    def ip(self):
+    def ip(self) -> str:
         return self.addr.ip
 
     @property
-    def port(self):
+    def port(self) -> int:
         return self.addr.port
 
     @property

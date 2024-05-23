@@ -1,9 +1,32 @@
 @import './base.css';
 
+/* Containers */
+
 #app {
   max-width: 100vw;
   max-height: 100vh;
   margin: 0 auto;
+}
+
+.v-main-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.v-content-container {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+}
+
+/* Bars */
+
+.menu-bar {
+  flex: 0;
+  display: flex;
+  max-width: fit-content;
 }
 
 .nvbar {
@@ -35,9 +58,115 @@
 .nv-list li {
   display: inline-flex;
   width: fit-content;
-  height: fit-content;
 }
 
 .nv-list li a {
   text-decoration: none;
+}
+
+.menu-bar {
+  background-color: var(--menu-bg-color);
+  display: inline-flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  flex-grow: 1;
+}
+
+.menu-bar > a {
+  padding: 1em;
+  min-width: 100%;
+
+  display: flex;
+  justify-content: center;
+  text-decoration: none;
+
+  color: var(--primary-fc);
+  font-family: var(--primary-ff);
+  transition: var(--transition-menu-bar-select);
+}
+
+.menu-bar > a:hover {
+  background-color: var(--tx-bg-color);
+}
+
+/* Views */
+
+.v-admin-panel,
+.v-admin-events,
+.v-admin-configuration,
+.v-admin-help,
+.v-admin-rules {
+  flex: 1;
+  display: flex;
+  font-family: var(--primary-ff);
+}
+
+.v-admin-clusters-header {
+  margin: 0.5em;
+  min-width: 100vh;
+  height: fit-content;
+  color: var(--secondary-fc);
+  font-family: var(--primary-ff);
+}
+
+.v-admin-clusters-menu {
+  margin: 0 0 0 1em;
+  display: flex;
+  align-items: center;
+  gap: 1em;
+}
+
+.v-admin-clusters-menu > button {
+  cursor: pointer;
+  display: inline-block;
+  min-width: fit-content;
+  vertical-align: middle;
+
+  outline: 0;
+  padding: 0.5em;
+  font-family: var(--primary-ff);
+  font-weight: 500;
+  line-height: 20px;
+
+  border: 1px solid;
+  border-radius: 6px;
+  color: var(--secondary-fc);
+  background-color: #fafbfc;
+  border-color: #1b1f2326;
+  box-shadow: rgba(27, 31, 35, 0.04) 0px 1px 0px 0px, rgba(255, 255, 255, 0.25) 0px 1px 0px 0px inset;
+}
+
+.v-admin-clusters-menu > div {
+  color: var(--secondary-fc);
+  font-family: var(--primary-ff);
+}
+
+.v-admin-clusters-table {
+  margin: 0 0 0 1em;
+  border-spacing: 5em;
+
+  display: table;
+  border-collapse: collapse;
+}
+
+.v-admin-clusters-table
+.v-admin-clusters-table tr th,
+.v-admin-clusters-table tr td {
+  min-width: fit-content;
+}
+
+.v-admin-clusters-table tr th {
+  padding: 1em 1em 1em;
+  text-align: center;
+  color: var(--secondary-fc);
+  font-weight: 500;
+  font-family: var(--primary-ff);
+}
+
+.v-admin-clusters-table tr td {
+  padding: 1em;
+  color: var(--secondary-fc);
+  font-family: var(--primary-ff);
+  border: 1px solid;
+  border-color: #1b1f2326;
 }
