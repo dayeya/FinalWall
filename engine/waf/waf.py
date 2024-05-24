@@ -1,5 +1,4 @@
 import asyncio
-import threading
 from enum import Enum
 
 from engine.errors import StateError
@@ -11,6 +10,7 @@ from engine.proxy_network.anonymity import AccessList
 from engine.proxy_network.geolocation import get_geoip_data
 from engine.proxy_network.behavior import recv_from_client, forward_data, recv_from_server
 
+from engine.tunnel import Tunnel, TunnelEvent
 from engine.net.connection import Connection, AsyncStream
 from engine.net.aionetwork import HostAddress, REMOTE_ADDR
 
@@ -44,7 +44,7 @@ class Waf:
     A class representing a Web application firewall.
     Protects a *single* entity in the network.
     """
-    def __init__(self, ucid: int, conf: WafConfig) -> None:
+    def __init__(self, ucid: int, conf: WafConfig, with_tunneling=True) -> None:
         try:
             SignatureDb()
         except Exception as _database_loading_err:
@@ -53,6 +53,8 @@ class Waf:
         self.__ucid = ucid
         self.__config = conf
         self.__server = None
+        self.__with_tunneling = with_tunneling
+        self.__tunnel = Tunnel(conf.admin["websocket_url"], auto_con=False)
         self.__ban_manager = BanManager()
         self.__profile_manager = ProfileManager()
         self.__acl = AccessList(main_list=[],
@@ -102,7 +104,6 @@ class Waf:
         )
         with self.__profile_manager as pm:
             pm.insert_profile(client.hash, profile)
-        print("Entered a connection profile.")
 
     async def __handle_authorized_client(self, client: Connection, event: Event):
         """
@@ -130,7 +131,8 @@ class Waf:
         await forward_data(client, response)
 
         # Log the log object.
-        print(event.log)
+        if self.__with_tunneling:
+            self.__tunnel.register_event(TunnelEvent.AccessLogUpdate)
 
     async def __handle_unauthorized_client(self, client: Connection, event: Event):
         """
@@ -185,7 +187,8 @@ class Waf:
         await forward_data(client, security_page)
 
         # Log the log object.
-        print(event.log)
+        if self.__with_tunneling:
+            self.__tunnel.register_event(TunnelEvent.SecurityLogUpdate)
 
     async def __handle_connection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         """
@@ -198,7 +201,6 @@ class Waf:
                             addr=HostAddress(*writer.get_extra_info(REMOTE_ADDR)))
         self.__set_connection_profile(client)
 
-        print("Before ban check.")
         if self.__ban_manager.banned(client.hash):
             security_log = SecurityLog(
                 ip=client.ip,
@@ -220,7 +222,6 @@ class Waf:
         access_list = self.__acl
         banned_countries = self.__config.geoip["banned_countries"]
 
-        print("Before flags.")
         flags = validate_dirty_client(client.ip, access_list, banned_countries)
 
         if flags != 0:
@@ -254,7 +255,6 @@ class Waf:
         access_list = self.__acl
         banned_countries = self.__config.geoip["banned_countries"]
 
-        print("Before check_transaction.")
         check_result = await check_transaction(tx, access_list, banned_countries)
 
         if check_result.result:
@@ -275,7 +275,6 @@ class Waf:
             await self.__handle_unauthorized_client(client, event)
             return
 
-        print("A good client.")
         access_log = AccessLog(
             ip=client.ip,
             port=client.port,
@@ -338,6 +337,13 @@ class Waf:
         # Run instance, state is _WafState.DEPLOYED.
         async with self.__server:
             self.__state = _WafState.WORKING
+
+            # Establish a tunnel with the fwserver for tunnel events if configured.
+            if self.__with_tunneling:
+                self.__tunnel.connect()
+                self.__tunnel.register_event(TunnelEvent.TunnelConnection)
+
+            # Start serving.
             print(f"INFO: Waf listening AT {self.__address}")
             await self.__server.serve_forever()
 

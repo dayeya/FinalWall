@@ -25,8 +25,8 @@ export default {
             console.log("Cluster creation failed!")
           }
           // Update the cluster table.
-          this.getCurrentClusters()
-      })
+          this.getCurrentClusters();
+      });
     },
     clusterReport() {
       console.log("Report incoming!")
@@ -48,15 +48,13 @@ export default {
         <tr>
           <th scope="col">Cluster ID</th>
           <th scope="col">Host</th>
-          <th scope="col">Port</th>
           <th scope="col">Endpoint</th>
           <th scope="col">Status</th>
         </tr>
       </thead>
       <tr v-for="cluster, index in clusters" :key="index">
         <td>{{ cluster.ucid }}</td>
-        <td>{{ cluster.ip }}</td>
-        <td>{{ cluster.port }}</td>
+        <td>{{ cluster.host }}</td>
         <td>{{ cluster.endpoint }}</td>
         <td>{{ cluster.status }}</td>
       </tr>

@@ -1,1 +1,1 @@
-from .tunnel import Tunnel
+from .tunnel import Tunnel, TunnelEvent

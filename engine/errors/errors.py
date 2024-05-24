@@ -7,7 +7,8 @@ class VersionError(Exception):
 
 class StateError(Exception):
     """
-    Raised when Waf.work() is called upon a closed or a working instance.
+    Raised when Waf.work() is called upon a closed or a working instance,
+    Or upon a Waf tunnel being used improperly.
     """
     pass
 

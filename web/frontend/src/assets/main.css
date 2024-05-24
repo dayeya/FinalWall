@@ -149,7 +149,7 @@
   border-collapse: collapse;
 }
 
-.v-admin-clusters-table
+.v-admin-clusters-table,
 .v-admin-clusters-table tr th,
 .v-admin-clusters-table tr td {
   min-width: fit-content;

@@ -2,7 +2,6 @@ import sqlite3
 from pathlib import Path
 from typing import Union
 
-from engine.internal.events import Event
 from engine.internal.core.profile import Profile
 from engine.components import Singleton
 
