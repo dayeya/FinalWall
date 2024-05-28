@@ -1,8 +1,7 @@
-<script setup>
-</script>
-
 <template>
   <div class="v-admin-rules">
-    Rules!
+    <h1 class="v-admin-rules-header">
+      Custom Rules
+    </h1>
   </div>
 </template>

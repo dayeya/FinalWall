@@ -5,7 +5,7 @@ from typing import Union
 from engine.internal.core.profile import Profile
 from engine.components import Singleton
 
-ROOT_PATH = Path(__file__).parent
+ROOT_PATH = Path(__file__).parent.parent
 
 
 class ProfileManager(metaclass=Singleton):

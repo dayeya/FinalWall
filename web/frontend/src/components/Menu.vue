@@ -1,15 +1,36 @@
 <script>
-import { RouterLink } from 'vue-router'
+import DashboardItem from './MenuItems/DashboardItem.vue'
+import EventsItem from './MenuItems/EventsItem.vue'
+import ClusterItem from './MenuItems/ClusterItem.vue'
+import ConfigurationItem from './MenuItems/ConfigurationItem.vue'
 export default {
     name: 'MenuBar',
-    data() {
+    components: { DashboardItem, EventsItem, ClusterItem, ConfigurationItem },
+    setup() {
         return {
             redirections: [
-                {name: "Admin Panel", link: "/admin/panel"},
-                {name: "Configuration", link: "/admin/config"},
-                {name: "Events", link: "/admin/events"},
-                {name: "Clusters", link: "/admin/clusters"},
-                {name: "Rules", link: "/admin/rules"}
+                {
+                    name: "Dashboard",
+                    component: DashboardItem,
+                    props: { name: "Dashboard", link: "/admin/dashboard" }
+                },
+                {
+                    name: "Clusters",
+                    component: ClusterItem,
+                    props: { name: "Clusters", link: "/admin/cluster" }
+                },
+                {
+                    name: "Events",
+                    path: "/admin/events",
+                    component: EventsItem,
+                    props: { name: "Events", link: "/admin/events" }
+                },
+                {
+                    name: "Configuration",
+                    path: "/admin/config",
+                    component: ConfigurationItem,
+                    props: { name: "Configuration", link: "/admin/config" }
+                },
             ]
         }
     }
@@ -18,8 +39,11 @@ export default {
 
 <template>
     <div class="menu-bar">
-        <router-link v-for="redirection in redirections" :key="redirection" :to="redirection.link">
-            {{ redirection.name }}
-        </router-link>
+        <component 
+            v-for="(item, index) in redirections" 
+            :key="index"
+            :is="item.component"
+            v-bind="item.props"
+        />
     </div>
 </template>

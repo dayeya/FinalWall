@@ -20,7 +20,7 @@ class Classifier(StrEnum):
     RFI = "Remote File Inclusion"
     LFI = "Local File Inclusion"
     UnauthorizedAccess = "Unauthorized Access"
-    BannedAccess = "Banned"
+    BannedAccess = "Banned Access"
     BannedGeolocation = "Banned Geolocation"
     Anonymity = "Anonymization"
 

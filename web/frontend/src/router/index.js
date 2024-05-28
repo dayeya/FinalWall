@@ -1,37 +1,23 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import RouterViewBind from '../views/RouterViewBind.vue'
-import AdminPanel from '../views/AdminPanel.vue'
-import Events from '../views/Events.vue'
-import Rules from '../views/Rules.vue'
-import Clusters from '../views/Clusters.vue'
-import Configuration from '../views/Configuration.vue'
-import Help from '../views/Help.vue'
+import Dashboard from '../views/Dashboard.vue'
 
 const routes = [
   {
     path: '/', 
-    name: 'Home', 
-    component: AdminPanel // Change to HomeView.
+    name: 'Home',
+    component: Dashboard
   },
   {
     path: '/admin', 
     name: 'Admin',
-    component: RouterViewBind,
+    component: () => import('../views/RouterViewBind.vue'),
     children: [
-      {path: 'panel', name: 'Admin Panel', component: AdminPanel},
-      {path: 'config', name: 'Configuration', component: Configuration},
-      {path: 'clusters', name: 'Clusters', component: Clusters},
-      {path: 'rules', name: 'Rules', component: Rules},
-      {path: 'help', name: 'Help', component: Help},
-      {
-        path: 'events', 
-        name: 'Events', 
-        component: Events,
-        children: [
-          {path: 'access_logs', name: "Access Logs", component: Events},
-          {path: 'security_logs', name: "Security Logs", component: Events},
-        ]
-      },
+      { path: 'dashboard', name: 'Dashboard', component: () => Dashboard },
+      { path: 'config', name: 'Configuration', component: () => import('../views/Configuration.vue') },
+      { path: 'events', name: 'Events', component: () => import('../views/Events.vue') },
+      { path: 'cluster', name: 'Cluster', component: () => import('../views/Cluster.vue') },
+      { path: 'rules', name: 'Rules', component: () => import('../views/Rules.vue') },
+      { path: 'help', name: 'Help', component: () => import('../views/Help.vue') }
     ]
   },
 ]

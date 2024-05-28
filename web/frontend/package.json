@@ -10,8 +10,15 @@
   },
   "dependencies": {
     "axios": "^1.7.2",
+    "chart.js": "^4.4.3",
+    "clusterize.js": "^1.0.0",
+    "socket.io": "^4.7.5",
+    "socket.io-client": "^4.7.5",
     "vue": "^3.4.21",
-    "vue-router": "^4.3.0"
+    "vue-chartjs": "^5.3.1",
+    "vue-router": "^4.3.0",
+    "vue-socket.io": "^3.0.10",
+    "vuex": "^4.0.2"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.4",

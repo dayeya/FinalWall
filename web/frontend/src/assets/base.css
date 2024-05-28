@@ -1,15 +1,18 @@
 
 :root {
+  --header-size: 2em;
   --nav-bg-color: #162447;
-  --menu-bg-color: #5a6063;
   --primary-fc: #EEEEEE;
   --secondary-fc: #000000;
 
   --brand-fz: 1.2em;
-  --primary-ff: sans-serif;
+  --primary-ff: 'Fira sans';
+
+  --primary-shadow-left: 0 3px 0.5em rgba(0, 0, 0, 0.5);
+  --primary-shadow-all: 1px 1px 0.25em rgba(0, 0, 0, 0.5);;
+  --exact-link-border: 0.25rem solid #162447;
 
   /* Animations */
-  --tx-bg-color: #4b5052;
   --transition-menu-bar-select: 200ms ease-out;
 }
 

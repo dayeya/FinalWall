@@ -1,3 +1,4 @@
+import pickle
 from dataclasses import dataclass
 from engine.internal.core.transaction import Transaction
 from engine.internal.events.logs import LogObject
@@ -28,9 +29,18 @@ class Event:
         Otherwise, it's the tx.id.
     log: LogObject - log of the event.
          Either security log or access log or None.
-    tx: Transaction - The transaction that triggered the event.
+    request: Transaction - The transaction that triggered the event.
+    response: Transaction - The transaction that triggered the event.
     """
     kind: str
     id: str
     log: LogObject | None
-    tx: Transaction | None
+    request: Transaction | None
+    response: Transaction | None
+
+    def serialize(self) -> bytes:
+        return pickle.dumps(self)
+
+    @classmethod
+    def deserialize(cls, pickled_event: bytes):
+        return pickle.loads(pickled_event)

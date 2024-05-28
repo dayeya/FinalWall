@@ -14,10 +14,10 @@ class BanManager(metaclass=Singleton):
     2. A client is freed when a ban is over or when the admin removes the ban.
     3. A ban is extended when a client exceeds the attack threshold.
     """
-    def __init__(self, logs=True):
+    def __init__(self, host="localhost", port=6379, ban_db=0, logs=True):
         try:
             self.__logs = logs
-            self.r = redis.Redis(host="localhost", port=6379, decode_responses=True)
+            self.r = redis.Redis(host=host, port=port, db=ban_db, decode_responses=True)
         except redis.exceptions.ConnectionError:
             print("Redis server is not running. Please run scripts/run_redis before deploying.")
 

@@ -1,8 +1,7 @@
-<script setup>
-</script>
-
 <template>
   <div class="v-admin-configuration">
-    Configuration!
+    <h1 class="v-admin-configuration-header">
+      Configuration
+    </h1>
   </div>
 </template>

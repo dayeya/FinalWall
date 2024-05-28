@@ -5,15 +5,9 @@ import vue from '@vitejs/plugin-vue'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  define: { 'process.env': {} },
   plugins: [
-    vue({
-      template: {
-        compilerOptions: {
-          // treat all tags with a dash as custom elements
-          isCustomElement: (tag) => tag.includes('Cluster')
-        }
-      }
-    }),
+    vue(),
   ],
   resolve: {
     alias: {

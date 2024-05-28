@@ -1,3 +1,4 @@
+import pickle
 from dataclasses import dataclass
 from typing import Union, Optional
 
@@ -13,7 +14,12 @@ class Log:
     ip: str
     port: int
     download: bool
+    sys_epoch_time: float
     creation_date: str
+    geolocation: GeoData | None
+
+    def serialize(self) -> bytes:
+        return pickle.dumps(self)
 
 
 @dataclass(slots=True)
@@ -22,7 +28,6 @@ class SecurityLog(Log):
     A log object that is created when a Waf instance detected a potential attack or threat.
     """
     classifiers: list[Classifier]
-    geolocation: GeoData
     malicious_data: Optional[bytes] = None
     metadata: Optional[dict] = None
 

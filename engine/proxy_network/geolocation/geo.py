@@ -1,3 +1,5 @@
+import json
+import requests
 import geoip2.database
 import geoip2.errors
 from pathlib import Path
@@ -11,9 +13,16 @@ __mmdb_path = ROOT_DIR / "geoip2_db" / "GeoLite2-City.mmdb"
 class GeoData:
     continent: str
     country: str
-    country_confidence: int
     city: str
-    city_confidence: int
+
+    def __repr__(self) -> str:
+        return f"{self.continent}, {self.country} - {self.city}"
+
+
+def get_external_ip() -> str:
+    """Uses the API of ipify.org to fetch the external IP of the cluster."""
+    response = requests.get("https://api.ipify.org?format=json").text
+    return json.loads(response)["ip"]
 
 
 def get_geoip_data(ip: str) -> GeoData | None:
@@ -28,9 +37,7 @@ def get_geoip_data(ip: str) -> GeoData | None:
             return GeoData(
                 continent=response.continent.name,
                 country=response.country.iso_code,
-                country_confidence=response.country.confidence,
                 city=response.city.name,
-                city_confidence=response.city.confidence,
             )
     except geoip2.errors.AddressNotFoundError:
         return None

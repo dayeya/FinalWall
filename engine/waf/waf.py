@@ -1,5 +1,9 @@
+import pickle
 import asyncio
 from enum import Enum
+
+import websockets.exceptions
+from websockets.server import serve, WebSocketServerProtocol
 
 from engine.errors import StateError
 from engine.config import WafConfig
@@ -7,12 +11,12 @@ from engine.config import WafConfig
 from engine.time_utils import get_unix_time, get_epoch_time
 
 from engine.proxy_network.anonymity import AccessList
-from engine.proxy_network.geolocation import get_geoip_data
+from engine.proxy_network.geolocation import get_geoip_data, get_external_ip
 from engine.proxy_network.behavior import recv_from_client, forward_data, recv_from_server
 
 from engine.tunnel import Tunnel, TunnelEvent
 from engine.net.connection import Connection, AsyncStream
-from engine.net.aionetwork import HostAddress, REMOTE_ADDR
+from engine.net.aionetwork import create_new_task, HostAddress, REMOTE_ADDR
 
 from engine.internal.events import Classifier
 from engine.internal.events import SecurityLog, AccessLog
@@ -22,17 +26,16 @@ from engine.internal.tokenization import tokenize
 from engine.internal.signature_db import SignatureDb
 
 from engine.internal.core.profile import Profile
-from engine.internal.core.ban_manager import BanManager
 from engine.internal.core.transaction import Transaction
-from engine.internal.core.profile_manager import ProfileManager
+from engine.internal.core.managers.ban_manager import BanManager
+from engine.internal.core.managers.event_manager import EventManager
+from engine.internal.core.managers.profile_manager import ProfileManager
 from engine.internal.core.blocking.block import create_security_page
 from engine.internal.core.vuln_checks import check_transaction, validate_dirty_client, classify_by_flags
 
 
 class _WafState(Enum):
-    """
-    An enum allowing state handling for Waf.
-    """
+    """An enum allowing state handling for Waf."""
     CREATED = "Created"
     DEPLOYED = "Deployed"
     WORKING = "WORKING"
@@ -44,7 +47,14 @@ class Waf:
     A class representing a Web application firewall.
     Protects a *single* entity in the network.
     """
-    def __init__(self, ucid: int, conf: WafConfig, with_tunneling=True) -> None:
+    def __init__(
+            self,
+            conf: WafConfig,
+            ucid: int,
+            local: bool=False,
+            with_tunneling: bool=True,
+            init_api: bool=True
+    ) -> None:
         try:
             SignatureDb()
         except Exception as _database_loading_err:
@@ -53,15 +63,29 @@ class Waf:
         self.__ucid = ucid
         self.__config = conf
         self.__server = None
+        self.__local = local
+        self.__init_api = init_api
+        self.__vulnerability_scores: dict[str, int] = {
+            Classifier.SqlInjection: 0,
+            Classifier.XSS: 0,
+            Classifier.RFI: 0,
+            Classifier.LFI: 0,
+            Classifier.UnauthorizedAccess: 0,
+            Classifier.BannedAccess: 0,
+            Classifier.BannedGeolocation: 0,
+            Classifier.Anonymity: 0
+        }
         self.__with_tunneling = with_tunneling
-        self.__tunnel = Tunnel(conf.admin["websocket_url"], auto_con=False)
+        self.__tunnel = Tunnel(conf.admin["backend_api"])
         self.__ban_manager = BanManager()
+        self.__event_manager = EventManager()
         self.__profile_manager = ProfileManager()
         self.__acl = AccessList(main_list=[],
                                 api=conf.acl["api"],
                                 interval=conf.acl["interval"],
                                 backup=conf.acl["backup"])
-        self.__address = (conf.proxy["ip"], conf.proxy["port"])
+        self.__api_address = (conf.waf["api_ip"], conf.waf["api_port"]) if init_api else None
+        self.__address = (conf.waf["ip"], conf.waf["port"])
         self.__target = (conf.webserver["ip"], conf.webserver["port"])
         self.__state = _WafState.CREATED
         print(f"INFO: Waf created")
@@ -69,6 +93,14 @@ class Waf:
     @property
     def ucid(self) -> int:
         return self.__ucid
+
+    @property
+    def api(self) -> bool:
+        return self.__init_api
+
+    @property
+    def local(self) -> bool:
+        return self.__local
 
     @property
     def state(self) -> _WafState:
@@ -86,13 +118,44 @@ class Waf:
     def address(self) -> tuple[str, int]:
         return self.__address
 
+    async def __start_api(self):
+        """Starts the websocket API for the backend API."""
+        async def __api_handler(websocket: WebSocketServerProtocol):
+            """Handler for the catching events from the backend API used by the user."""
+            data = -1
+            try:
+                async for event in websocket:
+                    print(websocket.messages)
+                    async with asyncio.Lock():
+                        if event == TunnelEvent.TunnelConnection:
+                            continue
+                        if event == TunnelEvent.AccessLogUpdate:
+                            data = self.get_authorized_events()
+                        if event == TunnelEvent.SecurityLogUpdate:
+                            data = self.get_security_events()
+                        if event == TunnelEvent.vulnerabilityScoresUpdate:
+                            data = self.get_vulnerability_scores()
+                        # Forward the data to the API.
+                        await websocket.send(pickle.dumps(data))
+            except websockets.exceptions.ConnectionClosed:
+                """Can either be raised from poor connectivity or large amounts of traffic."""
+                return
+
+        async with serve(__api_handler, *self.__api_address):
+            print(f"WAF API started... Listening on: {self.__api_address}")
+            await asyncio.get_event_loop().create_future()
+
+    def __update_vulnerability_scores(self, classifier: Classifier):
+        """Updates the number of times that an event was classified as an attack."""
+        self.__vulnerability_scores[classifier] += 1
+
     def __set_connection_profile(self, client: Connection):
         """
         Creates a new profile with a last_event of connection (only if the client is not in the db).
         :param client:
         :return:
         """
-        event = Event(kind=CONNECTION, id=tokenize(), log=None, tx=None)
+        event = Event(kind=CONNECTION, id=tokenize(), log=None, request=None, response=None)
         profile = Profile(
             host=client.ip,
             connection_date=get_unix_time(self.__config.timezone["time_zone"]),
@@ -116,8 +179,8 @@ class Waf:
         with self.__profile_manager as pm:
             profile_updates = {
                 "last_used_port": client.port,
-                "last_connection_time": get_epoch_time(),
-                "last_event": event,
+                "last_connection_time": event.log.sys_epoch_time,
+                "last_event": event
             }
             pm.update_profile(client.hash, profile_updates)
 
@@ -126,12 +189,14 @@ class Waf:
         web_server = Connection(stream=stream, addr=HostAddress(*self.__target))
 
         # Forward the clients request.
-        await forward_data(web_server, event.tx.raw)
+        await forward_data(web_server, event.request.raw)
         response = await recv_from_server(web_server)
         await forward_data(client, response)
 
+        self.__event_manager.cache_event(event)
+
         # Log the log object.
-        if self.__with_tunneling:
+        if self.__with_tunneling and self.__tunnel.connected:
             self.__tunnel.register_event(TunnelEvent.AccessLogUpdate)
 
     async def __handle_unauthorized_client(self, client: Connection, event: Event):
@@ -178,7 +243,10 @@ class Waf:
                 security_page_header = self.__config.securitypage["dirty_header"]
                 further_information = self.__config.securitypage["dirty_additional_info"]
 
-        # Forward it.
+        # Cache up some forensics.
+        self.__event_manager.cache_event(event)
+        self.__update_vulnerability_scores(event.log.classifiers[0])
+
         security_page: bytes = create_security_page(info={
             "header": security_page_header,
             "further_information": further_information,
@@ -186,8 +254,8 @@ class Waf:
         })
         await forward_data(client, security_page)
 
-        # Log the log object.
-        if self.__with_tunneling:
+        # Inform the backend API with an event.
+        if self.__with_tunneling and self.__tunnel.connected:
             self.__tunnel.register_event(TunnelEvent.SecurityLogUpdate)
 
     async def __handle_connection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
@@ -197,8 +265,13 @@ class Waf:
         :param writer:
         :return: None
         """
-        client = Connection(stream=AsyncStream(reader, writer),
-                            addr=HostAddress(*writer.get_extra_info(REMOTE_ADDR)))
+        # Change the IP of the connection to the external ip of the Waf instance.
+        # This change happens only when the Waf instance is configured to be a local cluster.
+        ip, port = writer.get_extra_info(REMOTE_ADDR)
+        if self.__local:
+            ip = get_external_ip()
+
+        client = Connection(stream=AsyncStream(reader, writer), addr=HostAddress(ip, port))
         self.__set_connection_profile(client)
 
         if self.__ban_manager.banned(client.hash):
@@ -206,6 +279,7 @@ class Waf:
                 ip=client.ip,
                 port=client.port,
                 download=True,
+                sys_epoch_time=get_epoch_time(),
                 creation_date=get_unix_time(self.__config.timezone["time_zone"]),
                 classifiers=[Classifier.BannedAccess],
                 geolocation=get_geoip_data(client.ip)
@@ -214,7 +288,8 @@ class Waf:
                 kind=UNAUTHORIZED_REQUEST,
                 id=tokenize(),
                 log=security_log,
-                tx=None
+                request=None,
+                response=None,
             )
             await self.__handle_unauthorized_client(client, event)
             return
@@ -230,6 +305,7 @@ class Waf:
                 ip=client.ip,
                 port=client.port,
                 download=True,
+                sys_epoch_time=get_epoch_time(),
                 creation_date=get_unix_time(self.__config.timezone["time_zone"]),
                 classifiers=log_classifiers,
                 geolocation=get_geoip_data(client.ip)
@@ -238,7 +314,8 @@ class Waf:
                 kind=UNAUTHORIZED_REQUEST,
                 id=tokenize(),
                 log=security_log,
-                tx=None
+                request=None,
+                response=None,
             )
             await self.__handle_unauthorized_client(client, event)
             return
@@ -262,6 +339,7 @@ class Waf:
                 ip=client.ip,
                 port=client.port,
                 download=True,
+                sys_epoch_time=get_epoch_time(),
                 creation_date=get_unix_time(self.__config.timezone["time_zone"]),
                 classifiers=check_result.classifiers,
                 geolocation=get_geoip_data(client.ip)
@@ -270,7 +348,8 @@ class Waf:
                 kind=UNAUTHORIZED_REQUEST,
                 id=tokenize(),
                 log=security_log,
-                tx=tx
+                request=tx,
+                response=None,
             )
             await self.__handle_unauthorized_client(client, event)
             return
@@ -279,15 +358,30 @@ class Waf:
             ip=client.ip,
             port=client.port,
             download=True,
+            geolocation=get_geoip_data(client.ip),
+            sys_epoch_time=get_epoch_time(),
             creation_date=get_unix_time(self.__config.timezone["time_zone"])
         )
         event = Event(
             kind=AUTHORIZED_REQUEST,
             id=str(tx.hash),
             log=access_log,
-            tx=tx
+            request=tx,
+            response=None
         )
         await self.__handle_authorized_client(client, event)
+
+    def get_authorized_events(self) -> list:
+        """Retrieves all the authorized events until this point in time."""
+        return self.__event_manager.get_access_events()
+
+    def get_security_events(self) -> list:
+        """Retrieves all the unauthorized events until this point in time."""
+        return self.__event_manager.get_security_events()
+
+    def get_vulnerability_scores(self):
+        """Returns a dictionary that maps a vulnerability with its detection score."""
+        return self.__vulnerability_scores
 
     async def start_acl_loop(self):
         """
@@ -295,6 +389,12 @@ class Waf:
         :return:
         """
         await self.__acl.activity_loop()
+
+    async def start_api(self):
+        """Starts the inner API for user initiated events."""
+        if not self.__init_api:
+            return
+        await self.__start_api()
 
     async def deploy(self) -> None:
         """
@@ -313,8 +413,8 @@ class Waf:
         # Deploy instance, state is _Waf.CREATED
         self.__server: asyncio.Server = await asyncio.start_server(
             client_connected_cb=self.__handle_connection,
-            host=self.__config.proxy["ip"],
-            port=self.__config.proxy["port"],
+            host=self.__config.waf["ip"],
+            port=self.__config.waf["port"],
             start_serving=False
         )
         self.__state = _WafState.DEPLOYED
@@ -336,16 +436,14 @@ class Waf:
 
         # Run instance, state is _WafState.DEPLOYED.
         async with self.__server:
-            self.__state = _WafState.WORKING
-
-            # Establish a tunnel with the fwserver for tunnel events if configured.
+            work = [create_new_task(task_name="WAF_WORKER", task=self.__server.serve_forever, args=())]
             if self.__with_tunneling:
-                self.__tunnel.connect()
-                self.__tunnel.register_event(TunnelEvent.TunnelConnection)
+                work += [create_new_task(task_name="WAF_TUNNEL_CONNECT", task=self.__tunnel.connect, args=())]
 
             # Start serving.
             print(f"INFO: Waf listening AT {self.__address}")
-            await self.__server.serve_forever()
+            self.__state = _WafState.WORKING
+            await asyncio.gather(*work)
 
     async def restart(self):
         """

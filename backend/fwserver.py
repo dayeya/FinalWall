@@ -1,124 +1,154 @@
-from engine import Waf, WafConfig, TunnelEvent
-from engine.errors import VersionError, StateError
-from engine.net import create_new_task, create_new_thread, looper
+import pickle
+
+import websockets.exceptions
+
+from engine import Tunnel, TunnelEvent
+from engine.errors import VersionError
+from engine.internal.events import Event
+from engine.net import create_new_task, create_new_thread
 
 from backend.deps.ops import Operation
 from backend.deps.fwlogs import create_logger
 
 import asyncio
 from flask_cors import CORS
-from websockets.server import serve, WebSocketServerProtocol
 from flask import Flask, jsonify, request
-
-
-@looper
-async def start_cluster(cluster: Waf) -> None:
-    """
-    Starts a cluster upon a request from the admin.
-    This will be run in a separate thread of the backend server.
-    """
-    await cluster.deploy()
-    work = [
-        create_new_task(task_name=Operation.CLUSTER_WORK_LOOP, task=cluster.work, args=()),
-        create_new_task(task_name=Operation.CLUSTER_ACL_LOOP, task=cluster.start_acl_loop, args=())
-    ]
-    await asyncio.gather(*work)
+from flask_socketio import SocketIO
+from websockets.server import serve, WebSocketServerProtocol
 
 
 class FWServer(Flask):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self.__server = None
-        self.__total_clusters = 0
-        self.__clusters: dict[int, Waf] = {}
-        self.__logger = create_logger(name="FinalWallServer")
+        self.__cluster_ws = None
+        self.__logger = create_logger(name="API")
+        self.__tunnel = Tunnel("ws://localhost:8790")
+        self.__socketIO = SocketIO(self, cors_allowed_origins="*", logger=False, engineio_logger=False)
+        self.__tunnel_thread = create_new_thread(func=asyncio.run, args=(self.tunnel_thread(),), daemon=True)
 
-        self.__set_url_rules()
-        self.__tunnel_thread = create_new_thread(func=asyncio.run, args=(self.__start_tunnel_server(), ), daemon=True)
+        self.__logger.info("FinalWall API started.")
 
-        self.__logger.info("FWServer initiated.")
+    def connect_to_cluster_api(self):
+        """Connects to the API of the cluster."""
+        create_new_thread(func=asyncio.run, args=(self.__tunnel.connect(),)).start()
 
-    def start_tunnel_server(self):
-        """Starts the thread for the tunnel thread which will handle events coming from all clusters."""
-        self.__tunnel_thread.start()
-
-    async def __start_tunnel_server(self):
-        """Starts the websocket tunnel server."""
-        async with serve(self.__tunnel_event_handler, "localhost", 8765):
-            await asyncio.get_event_loop().create_future()
-
-    async def __tunnel_event_handler(self, websocket: WebSocketServerProtocol):
-        """
-        Handler that handles each event for each cluster.
-        This handler is the main mechanism of real-time updates.
-        """
-        async for event in websocket:
-            if event is TunnelEvent.AccessLogUpdate:
-                print("A cluster has a access log update!")
-            elif event is TunnelEvent.SecurityLogUpdate:
-                print("A cluster hash a security log update!")
-            else:
-                print(f"Registered -> {event}")
-
-    def __set_url_rules(self):
+    def set_rules(self):
         """
         Sets the URL rules for every API endpoint.
         """
-        self.add_url_rule("/events", view_func=self.events_handler, methods=["GET"])
-        self.add_url_rule("/clusters", view_func=self.clusters_handler, methods=["GET", "POST"])
+        self.add_url_rule("/api/authorized_events", view_func=self.authorized_events_handler, methods=["GET"])
+        self.add_url_rule("/api/security_events", view_func=self.security_events_handler, methods=["GET"])
+        self.add_url_rule("/api/vulnerability_scores", view_func=self.vulnerability_scores, methods=["GET"])
 
-    def register_cluster(self) -> Waf:
-        """
-        Registers a FinalWall WAF cluster.
-        Each cluster is given a unique id (The clusters index).
-        """
-        config = WafConfig()
-        ucid = self.__total_clusters + 1
-        cluster = Waf(ucid, config, with_tunneling=True)
-        self.__clusters[ucid] = cluster
-        self.__total_clusters += 1
-        return cluster
-
-    def cluster_report(self, ucid: int) -> dict:
-        """Builds a report of a cluster with a given unique cluster id."""
-        def format_address(host: tuple) -> str:
-            return host[0] + ":" + str(host[1])
-
-        cluster = self.__clusters[ucid]
-        return {
-            "ucid": ucid,
-            "host": format_address(cluster.address),
-            "endpoint": format_address(cluster.target),
-            "status": cluster.state.name
-        }
-
-    def clusters_handler(self):
-        """
-        Handler of '/admin/clusters'.
-        API GET request: Fetches a cluster report containing data related to all clusters.
-        API POST request: Creates a new cluster and starts its thread.
-        """
-        if request.method == "GET":
-            clusters_info = [self.cluster_report(ucid) for ucid in self.__clusters.keys()]
-            return jsonify({"clusters": clusters_info})
-
-        elif request.method == "POST":
+    async def tunnel_thread(self):
+        """Starts the websocket tunnel server."""
+        async def __tunnel_event_handler(websocket: WebSocketServerProtocol):
+            """Handler for the catching events from the main cluster."""
             try:
-                cluster = self.register_cluster()
-                cluster_thread = create_new_thread(func=asyncio.run, args=(start_cluster(cluster),))
-                cluster_thread.start()
-                return jsonify({
-                    "status": Operation.CLUSTER_REGISTRATION_SUCCESSFUL
-                })
-            except (StateError, OSError):
-                return jsonify({
-                    "status": Operation.CLUSTER_REGISTRATION_FAILURE
-                })
+                async for event in websocket:
+                    if event == TunnelEvent.AccessLogUpdate:
+                        self.__socketIO.emit(TunnelEvent.AccessLogUpdate)
+                    if event == TunnelEvent.SecurityLogUpdate:
+                        self.__socketIO.emit(TunnelEvent.SecurityLogUpdate)
+                    if event == TunnelEvent.vulnerabilityScoresUpdate:
+                        self.__socketIO.emit(TunnelEvent.vulnerabilityScoresUpdate)
 
-    def events_handler(self):
-        return jsonify({"Events": ["One"]})
+            except websockets.exceptions.ConnectionClosed:
+                """Can either be raised from poor connectivity or large amounts of traffic."""
+                return
 
+        async with serve(__tunnel_event_handler, "localhost", 8765):
+            await asyncio.get_event_loop().create_future()
+
+    def start_tunnel_server(self):
+        """Starts tunnel listener."""
+        self.__tunnel_thread.start()
+
+    def authorized_events_handler(self):
+        """Returns the authorized events to the frontend."""
+        if not self.__tunnel.connected:
+            return jsonify({
+                "status": Operation.TUNNEL_CLOSED
+            })
+        self.__tunnel.register_event(TunnelEvent.AccessLogUpdate)
+        pickled_events: bytes = self.__tunnel.recv_publish()
+        authorized_events: list[Event] = pickle.loads(pickled_events)
+
+        # Format the events for API response.
+        jsoned_events = [{
+            "ip": event.log.ip,
+            "id": event.id,
+            "port": event.log.port,
+            "date": event.log.creation_date,
+            "geolocation": repr(event.log.geolocation),
+            "downloadable": event.log.download
+        } for event in authorized_events]
+
+        return jsonify({
+            "status": Operation.CLUSTER_EVENT_FETCHING_SUCCESSFUL,
+            "events": jsoned_events
+        })
+
+    def security_events_handler(self):
+        """Returns the security events to the frontend."""
+        if not self.__tunnel.connected:
+            return jsonify({
+                "status": Operation.TUNNEL_CLOSED
+            })
+        self.__tunnel.register_event(TunnelEvent.SecurityLogUpdate)
+        pickled_events: bytes = self.__tunnel.recv_publish()
+        security_events: list[Event] = pickle.loads(pickled_events)
+
+        print(security_events)
+
+        # Format the events for API response.
+        jsoned_events = [{
+            "activity_token": event.id,
+            "date": event.log.creation_date,
+            "ip": event.log.ip,
+            "port": event.log.port,
+            "classifiers": event.log.classifiers,
+            "geolocation": repr(event.log.geolocation),
+            "downloadable": event.log.download
+        } for event in security_events]
+
+        return jsonify({
+            "status": Operation.CLUSTER_EVENT_FETCHING_SUCCESSFUL,
+            "events": jsoned_events
+        })
+
+    def vulnerability_scores(self):
+        """Returns the vulnerability scores to the frontend."""
+        if not self.__tunnel.connected:
+            return jsonify({
+                "status": Operation.TUNNEL_CLOSED
+            })
+        self.__tunnel.register_event(TunnelEvent.vulnerabilityScoresUpdate)
+        pickled_scores: bytes = self.__tunnel.recv_publish()
+
+        print(pickled_scores)
+
+        vulnerability_scores: dict = pickle.loads(pickled_scores)
+
+        print(vulnerability_scores)
+
+        return jsonify({
+            "status": Operation.CLUSTER_EVENT_FETCHING_SUCCESSFUL,
+            "scores": vulnerability_scores
+        })
+
+
+async def main():
+    """Main entry for the API."""
+    app = FWServer(import_name=__name__)
+    CORS(app, resources={r"/*": {"origins": "*"}})
+
+    app.set_rules()
+    app.start_tunnel_server()
+    app.connect_to_cluster_api()
+
+    app.run(host="localhost", port=5001)
 
 if __name__ == "__main__":
     import tracemalloc
@@ -129,9 +159,4 @@ if __name__ == "__main__":
     if sys.version_info[0:2] != (3, 12):
         raise VersionError("Wrong python version. Please use +=3.12 only")
 
-    app = FWServer(import_name=__name__)
-    CORS(app, resources={r"*": {"origins": "*"}})
-
-    app.start_tunnel_server()
-
-    app.run(host="localhost", port=5001)
+    asyncio.run(main())
