@@ -14,10 +14,11 @@ class BanManager(metaclass=Singleton):
     2. A client is freed when a ban is over or when the admin removes the ban.
     3. A ban is extended when a client exceeds the attack threshold.
     """
-    def __init__(self, host="localhost", port=6379, ban_db=0, logs=True):
+    def __init__(self, host="localhost", ban_namespace="bans", port=6379, logs=True):
         try:
             self.__logs = logs
-            self.r = redis.Redis(host=host, port=port, db=ban_db, decode_responses=True)
+            self.__ban_namespace = ban_namespace
+            self.r = redis.Redis(host=host, port=port, decode_responses=True)
         except redis.exceptions.ConnectionError:
             print("Redis server is not running. Please run scripts/run_redis before deploying.")
 
@@ -46,9 +47,9 @@ class BanManager(metaclass=Singleton):
         :param banned_at:
         :return:
         """
-        self.r.hset(client_hash, key="banned_at", value=str(banned_at))
-        self.r.hset(client_hash, key="duration_remaining", value=str(ban_duration))
-        self.r.expire(name=client_hash, time=int(ban_duration))
+        self.r.hset(f'{self.__ban_namespace}:{client_hash}', key="banned_at", value=str(banned_at))
+        self.r.hset(f'{self.__ban_namespace}:{client_hash}', key="duration_remaining", value=str(ban_duration))
+        self.r.expire(f'{self.__ban_namespace}:{client_hash}', time=int(ban_duration))
 
     def get_mapping(self, client_hash: str) -> dict:
         """

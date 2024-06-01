@@ -1,7 +1,6 @@
 import redis
-import time
-from engine.internal.events import Event, AccessLog, AUTHORIZED_REQUEST, UNAUTHORIZED_REQUEST
 from engine.components.singleton import Singleton
+from engine.internal.events import Event, AUTHORIZED_REQUEST, UNAUTHORIZED_REQUEST
 
 
 class EventManager(metaclass=Singleton):
@@ -11,15 +10,14 @@ class EventManager(metaclass=Singleton):
             port=6379,
             access_events_namespace="access_events",
             security_events_namespace="security_events",
-            security_db=0,
             logs=True
-        ):
+    ):
         try:
             self.__logs = logs
             self.__access_events_namespace = access_events_namespace
             self.__security_events_namespace = security_events_namespace
-            self.access_events_redis = redis.Redis(host=host, port=port, db=0)
-            self.security_events_redis = redis.Redis(host=host, port=port, db=security_db)
+            self.access_events_redis = redis.Redis(host=host, port=port)
+            self.security_events_redis = redis.Redis(host=host, port=port)
         except redis.exceptions.ConnectionError:
             print("Redis server is not running. Please run scripts/run_redis before deploying.")
 

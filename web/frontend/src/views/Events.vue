@@ -102,6 +102,8 @@ export default {
               <th scope="col">Time</th>
               <th scope="col">Source IP</th>
               <th scope="col">Port</th>
+              <th scope="col">URL</th>
+              <th scope="col">Size</th>
               <th scope="col">Geolocation</th>
             </tr>
           </thead>
@@ -110,6 +112,8 @@ export default {
             <td>{{ event.date }}</td>
             <td>{{ event.ip }}</td>
             <td>{{ event.port }}</td>
+            <td>{{ event.url }}</td>
+            <td>{{ event.size }}</td>
             <td>{{ event.geolocation }}</td>
           </tr>
         </table>
@@ -132,6 +136,7 @@ export default {
             <td>{{ event.ip }}</td>
             <td>{{ event.port }}</td>
             <td>{{ event.classifiers[0] }}</td>
+            <td>{{ event.size }}</td>
             <td>{{ event.geolocation }}</td>
           </tr>
         </table>

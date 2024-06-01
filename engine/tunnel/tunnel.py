@@ -1,13 +1,12 @@
 import asyncio
+from typing import Any
 from enum import StrEnum
-
 import websockets.exceptions
 
 from engine.errors import StateError
-from websockets.sync.client import (
-    connect,
-    ClientConnection as WebSocketConnection
-)
+from websockets.sync.client import connect
+
+type EventResult = str | bytes
 
 
 class TunnelEvent(StrEnum):
@@ -20,8 +19,8 @@ class TunnelEvent(StrEnum):
     AccessLogUpdate = 'access_log_update'
     SecurityLogUpdate = 'security_log_update'
 
-    vulnerabilityScoresUpdate = 'vulnerability_scores_update'
-    packetFlowUpdate = 'packet_flow_update'
+    AttackDistributionUpdate = 'attack_distribution_update'
+    WafHealthUpdate = 'waf_health_update'
 
 
 class Tunnel:
@@ -72,6 +71,11 @@ class Tunnel:
         """Sends a tunnel event to the endpoint."""
         self.__websocket.send(event)
 
-    def recv_publish(self) -> str | bytes:
+    def recv_result(self) -> EventResult:
         """Returns the data sent from the websocket server."""
         return self.__websocket.recv()
+
+    def register_recv(self, event) -> EventResult:
+        """Performs a send/recv operation."""
+        self.register_event(event)
+        return self.recv_result()

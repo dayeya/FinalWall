@@ -66,12 +66,11 @@ class Transaction:
         self.method, self.url, self.version = process_request_line(self.raw)
     
     def __process_message(self) -> None:
+        self.size = len(self.raw)
         self.headers, self.body = process_headers_and_body(self.raw)
     
     def __process_params(self) -> None:
-        """
-        Processes the params either of the URL or the body.
-        """
+        """Processes the params either of the URL or the body."""
         if self.method == Method.GET:
             self.query_params = process_query(self.url.query)
         if self.method == Method.POST:

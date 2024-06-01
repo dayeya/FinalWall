@@ -1,6 +1,9 @@
 <script>
+import AttackDistribution from '../components/AttackDistribution.vue';
+import AttackSources from '../components/AttackSources.vue';
 import { mapState } from 'vuex';
 export default {
+  components: { AttackDistribution, AttackSources },
   computed: {
     ...mapState([
       'deployedAt',
@@ -50,6 +53,9 @@ export default {
         </p>
       </div>
     </div>
-    
+    <div class="v-admin-dashboard-statistics">
+      <AttackSources />
+      <AttackDistribution />
+    </div>
   </div>
 </template>

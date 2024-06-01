@@ -16,92 +16,116 @@ const currentTimeFormatted = () => {
     return dateString;
 };
 
-// Save the state to localStorage
-const saveStateToLocalStorage = (state) => {
-    localStorage.setItem('vuexState', JSON.stringify(state));
-};
-
 // Load the state from localStorage
 const loadStateFromLocalStorage = () => {
+    localStorage.removeItem('vuexState');
     const state = localStorage.getItem('vuexState');
     return state ? JSON.parse(state) : {
         deployedAt: '',
         lastUpdate: '',
+        totalTransactions: 0,
         allowedTransactions: 0,
         blockedTransactions: 0,
-        totalTransactions: 0,
         accessEvents: [],
         securityEvents: [],
-        vulnerabilityScores: {},
+        health: [],
+        attackDistribution: {},
+        attackSources: {
+            "sources": [],
+            "numbers": []
+        },
     };
 };
 
 const store = new Vuex.Store({
     state: loadStateFromLocalStorage(),
     mutations: {
+        updateState(state) {
+            localStorage.setItem('vuexState', JSON.stringify(state));
+        },
         updateTotalTransactions(state) {
             state.totalTransactions = state.allowedTransactions + state.blockedTransactions
-            saveStateToLocalStorage(state);
         },
         updateLatestUpdate(state) {
             state.lastUpdate = currentTimeFormatted();
-            saveStateToLocalStorage(state);
         },
-        async updateAccessEvents(state) {
-            try {
-                await axios.get(`http://localhost:5001/api/authorized_events`)
-                .then((response) => {
-                    if (response.data.status == Operation.CLUSTER_EVENT_FETCHING_FAILURE) {
-                        console.log("Failed to fetch ongoing access events.")
-                    }
-                    state.accessEvents = response.data.events
-                    state.allowedTransactions = response.data.events.length
-                    this.commit('updateTotalTransactions');
-                    this.commit('updateLatestUpdate');
-                    saveStateToLocalStorage(state);
-                });
-            } catch (error) {
-                console.log(error.response.data)
-            }
+        updateAccessEvents(state, events) {
+            state.accessEvents = events
+            state.allowedTransactions = events.length
         },
-        async updateSecurityEvents(state) {
-            try {
-                await axios.get(`http://localhost:5001/api/security_events`)
-                .then((response) => {
-                    if (response.data.status == Operation.CLUSTER_EVENT_FETCHING_FAILURE) {
-                        console.log("Failed to fetch ongoing security events.")
-                    }
-                    state.securityEvents = response.data.events
-                    state.blockedTransactions = response.data.events.length
-                    this.commit('updateTotalTransactions');
-                    this.commit('updateVulnerabilityScores');
-                    this.commit('updateLatestUpdate');
-                    saveStateToLocalStorage(state);
-                });
-            } catch (error) {
-                console.log(error.response.data)
-            }
+        updateSecurityEvents(state, events) {
+            state.securityEvents = events
+            state.blockedTransactions = events.length
         },
-        async updateVulnerabilityScores(state) {
-            try {
-                await axios.get(`http://localhost:5001/api/vulnerability_scores`)
-                .then((response) => {
-                    if (response.data.status == Operation.CLUSTER_EVENT_FETCHING_FAILURE) {
-                        console.log("Failed to fetch ongoing security events.")
-                    }
-                    state.vulnerabilityScores = response.data.scores
-                    this.commit('updateLatestUpdate');
-                    saveStateToLocalStorage(state);
-                });
-            } catch (error) {
-                console.log(error.response.data)
-            }
+        updateAttackDistribution(state, scores) {
+            state.attackDistribution = scores
+        },
+        updateHealth(state, health) {
+            state.health = health
+        },
+        updateTopAttackSources(state) {
+            state.attackSources = {}
+            state.securityEvents.forEach(event => {
+                if (!state.attackSources[event.ip]) {
+                    state.attackSources[event.ip] = 0;
+                }
+                state.attackSources[event.ip]++;
+            });
+            const sortedDistributions = Object.keys(state.attackSources)
+            .map(ip => ({ ip: ip, times: state.attackSources[ip] }))
+            .sort((a, b) => b.times - a.times);
+            state.attackSources["sources"] = sortedDistributions.slice(0, 5).map((source) => source.ip);
+            state.attackSources["numbers"] = sortedDistributions.slice(0, 5).map((source) => source.times);
         }
     },
-    getters: {
-        getAccessEvents: (state) => { return state.accessEvents }, 
-        getSecurityEvents: (state) => { return state.securityEvents },
-        getClusters: (state) => { return state.clusters }
+    actions: {
+        async updateAccessEvents() {
+            await axios.get(`http://localhost:5001/api/authorized_events`)
+            .then((response) => {
+                if (response.data.status == Operation.CLUSTER_EVENT_FETCHING_FAILURE) {
+                    // pass
+                }
+                this.commit('updateAccessEvents', response.data.events);
+                this.commit('updateTotalTransactions');
+                this.commit('updateLatestUpdate');
+                this.commit('updateState');
+            });
+        },
+        async updateSecurityEvents() {
+            await axios.get(`http://localhost:5001/api/security_events`)
+            .then((response) => {
+                if (response.data.status == Operation.CLUSTER_EVENT_FETCHING_FAILURE) {
+                    // pass
+                }
+                this.commit('updateSecurityEvents', response.data.events)
+                this.commit('updateTotalTransactions');
+
+                this.dispatch('updateAttackDistribution');
+                this.commit('updateTopAttackSources');
+                this.commit('updateLatestUpdate');
+                this.commit('updateState');
+            });
+        },
+        async updateAttackDistribution() {
+            await axios.get(`http://localhost:5001/api/attack_distribution`)
+            .then((response) => {
+                if (response.data.status == Operation.CLUSTER_EVENT_FETCHING_FAILURE) {
+                    // pass
+                }
+                this.commit('updateAttackDistribution', response.data.scores);
+                this.commit('updateState');
+            });
+        },
+        async updateHealth() {
+            await axios.get(`http://localhost:5001/api/health`)
+            .then((response) => {
+                if (response.data.status == Operation.CLUSTER_HEALTH_FAILURE) {
+                    // pass
+                }
+                this.commit('updateHealth', response.data.health);
+                this.commit('updateState');
+            });
+        }
     }
 });
 

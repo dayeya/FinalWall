@@ -21,7 +21,7 @@ backend_api = "ws://localhost:8765"
 
 [ACL]
 api = "https://check.torproject.org/exit-addresses"
-backup = "C:\\coding\\NetGuard\\src\\proxy_network\\TorExitNodes.txt"
+backup = "C:\\coding\\FinalWall\\engine\\proxy_network\\anonymity\\TorExitNodes.txt"
 interval = 1800 # 30 minutes
 
 [Banning]

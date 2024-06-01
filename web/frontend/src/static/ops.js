@@ -1,9 +1,18 @@
 export const Operation = Object.freeze({
-    CLUSTER_REGISTRATION_SUCCESSFUL: 101,
-    CLUSTER_REGISTRATION_FAILURE: 201,
+    TUNNEL_CLOSED: -101,
+    TUNNEL_CONNECTION: 101,
+
+    CLUSTER_REGISTRATION_SUCCESSFUL: 201,
+    CLUSTER_REGISTRATION_FAILURE: 301,
 
     CLUSTER_EVENT_FETCHING_SUCCESSFUL: 501,
-    CLUSTER_EVENT_FETCHING_FAILURE: 601
+    CLUSTER_EVENT_FETCHING_FAILURE: 601,
+
+    CLUSTER_ATTACK_DISTRIBUTION_SUCCESSFUL: 801,
+    CLUSTER_ATTACK_DISTRIBUTION_FAILURE: 901,
+
+    CLUSTER_HEALTH_SUCCESSFUL: 1101,
+    CLUSTER_HEALTH_FAILURE: 1201
 });
 
 export const Events = Object.freeze({
@@ -13,5 +22,7 @@ export const Events = Object.freeze({
     ClusterUpdate: 'cluster_update',
     
     AccessLogUpdate: 'access_log_update',
-    SecurityLogUpdate: 'security_log_update'
+    SecurityLogUpdate: 'security_log_update',
+
+    WafHealthUpdate: 'waf_health_update'
 });
