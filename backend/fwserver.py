@@ -12,7 +12,7 @@ from backend.deps.fwlogs import create_logger
 
 import asyncio
 from flask_cors import CORS
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
 from flask_socketio import SocketIO
 from websockets.server import serve, WebSocketServerProtocol
 
@@ -42,10 +42,11 @@ class FWServer(Flask):
 
     def set_rules(self):
         """Sets the URL rules for every API endpoint."""
+        self.add_url_rule("/api/health", view_func=self.health, methods=["GET"])
+        self.add_url_rule("/api/services", view_func=self.services, methods=["GET"])
         self.add_url_rule("/api/authorized_events", view_func=self.authorized_events_handler, methods=["GET"])
         self.add_url_rule("/api/security_events", view_func=self.security_events_handler, methods=["GET"])
         self.add_url_rule("/api/attack_distribution", view_func=self.attack_distribution, methods=["GET"])
-        self.add_url_rule("/api/health", view_func=self.health, methods=["GET"])
 
     async def tunnel_thread(self):
         """Starts the websocket tunnel server."""
@@ -136,6 +137,10 @@ class FWServer(Flask):
             "status": Operation.CLUSTER_EVENT_FETCHING_SUCCESSFUL,
             "scores": attack_distributions
         })
+
+    def services(self):
+        """Returns the services data of the Waf."""
+        pass
 
     def health(self):
         """Returns the health of the Waf."""

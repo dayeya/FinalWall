@@ -14,6 +14,13 @@ class EventManager(metaclass=Singleton):
     ):
         try:
             self.__logs = logs
+            self.__service_report = {
+                "host": host,
+                "port": port,
+                "size": 0,
+                "security_events_size": 0,
+                "access_events_size": 0,
+            }
             self.__access_events_namespace = access_events_namespace
             self.__security_events_namespace = security_events_namespace
             self.access_events_redis = redis.Redis(host=host, port=port)

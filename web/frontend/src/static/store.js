@@ -34,6 +34,12 @@ const loadStateFromLocalStorage = () => {
             "sources": [],
             "numbers": []
         },
+        services: {
+            "wafHost": '',
+            "wafPort": '',
+            "redisHost": '',
+            "redisPort": ''
+        }
     };
 };
 
@@ -117,6 +123,16 @@ const store = new Vuex.Store({
             });
         },
         async updateHealth() {
+            await axios.get(`http://localhost:5001/api/health`)
+            .then((response) => {
+                if (response.data.status == Operation.CLUSTER_HEALTH_FAILURE) {
+                    // pass
+                }
+                this.commit('updateHealth', response.data.health);
+                this.commit('updateState');
+            });
+        },
+        async updateServices() {
             await axios.get(`http://localhost:5001/api/health`)
             .then((response) => {
                 if (response.data.status == Operation.CLUSTER_HEALTH_FAILURE) {
