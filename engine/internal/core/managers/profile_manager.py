@@ -22,6 +22,11 @@ class ProfileManager(metaclass=Singleton):
         self.conn = conn
         self.cursor = self.conn.cursor()
 
+    @property
+    def service_report(self):
+        """Returns a report of the manager."""
+        return {}
+
     def insert_profile(self, client_hash: str, profile: Profile) -> None:
         """
         Inserts a profile mapped by the hash into the db.

@@ -102,19 +102,19 @@ export default {
               <th scope="col">Time</th>
               <th scope="col">Source IP</th>
               <th scope="col">Port</th>
-              <th scope="col">URL</th>
-              <th scope="col">Size</th>
+              <th scope="col">Resource</th>
+              <th scope="col">Request Size [bytes]</th>
               <th scope="col">Geolocation</th>
             </tr>
           </thead>
-          <tr v-for="event, index in accessEvents" :key="index">
+          <tr v-for="(event, index) in accessEvents" :key="index">
             <td>{{ event.id }}</td>
-            <td>{{ event.date }}</td>
-            <td>{{ event.ip }}</td>
-            <td>{{ event.port }}</td>
-            <td>{{ event.url }}</td>
-            <td>{{ event.size }}</td>
-            <td>{{ event.geolocation }}</td>
+            <td>{{ event.log.creation_date }}</td>
+            <td>{{ event.log.ip }}</td>
+            <td>{{ event.log.port }}</td>
+            <td>{{ event.request.url[2] }}</td>
+            <td>{{ event.request.size }}</td>
+            <td>{{ event.log.geolocation["continent"] }}, {{ event.log.geolocation["country"] }}, {{ event.log.geolocation["city"] }}</td>
           </tr>
         </table>
       </div>
@@ -127,17 +127,18 @@ export default {
               <th scope="col">Source IP</th>
               <th scope="col">Port</th>
               <th scope="col">Vulnerability</th>
+              <th scope="col">Request Size [bytes]</th>
               <th scope="col">Geolocation</th>
             </tr>
           </thead>
-          <tr v-for="event, index in securityEvents" :key="index">
-            <td>{{ event.activity_token }}</td>
-            <td>{{ event.date }}</td>
-            <td>{{ event.ip }}</td>
-            <td>{{ event.port }}</td>
-            <td>{{ event.classifiers[0] }}</td>
-            <td>{{ event.size }}</td>
-            <td>{{ event.geolocation }}</td>
+          <tr v-for="(event, index) in securityEvents" :key="index">
+            <td>{{ event.id }}</td>
+            <td>{{ event.log.creation_date }}</td>
+            <td>{{ event.log.ip }}</td>
+            <td>{{ event.log.port }}</td>
+            <td>{{ event.log.classifiers[0] }}</td>
+            <td>{{ event.request.size }}</td>
+            <td>{{ event.log.geolocation["continent"] }}, {{ event.log.geolocation["country"] }}, {{ event.log.geolocation["city"] }}</td>
           </tr>
         </table>
       </div>

@@ -73,14 +73,17 @@ def process_request_line(request: bytes) -> tuple:
 def process_header(header: bytes) -> tuple:
     field_name, sep, field_value = header.rpartition(HS)
     assert sep  # b":" Must be present.
-    return field_name, field_value.strip()
+    return field_name.decode(), field_value.strip().decode()
 
 
 def process_headers_and_body(request: bytes) -> tuple:
-    # TODO: Identify multiple value headers.
-    message, body = request.split(BODY_SEPARATOR)
-    headers: dict = {field: value for field, value in map(process_header, message.split(CRLF)[1:])}
-    return headers, decode_any_encoding(body)
+    try:
+        message, body = request.split(BODY_SEPARATOR)
+        headers: dict = {field: value for field, value in map(process_header, message.split(CRLF)[1:])}
+        return headers, decode_any_encoding(body)
+    except ValueError:
+        """No body."""
+        return {}, ""
 
 
 def process_query(query: bytes) -> dict:
@@ -94,3 +97,11 @@ def process_query(query: bytes) -> dict:
     params: dict = parse_qs(query, strict_parsing=True)
     decoded_params: dict = dict(map(lambda item: _decode_query(*item), params.items()))
     return decoded_params
+
+
+def decode_headers(headers: dict) -> dict:
+    """Decodes the headers and their values if needed."""
+    try:
+        return {header.decode("utf-8"): value.decode("utf-8") for header, value in headers.items()}
+    except AttributeError:
+        return headers

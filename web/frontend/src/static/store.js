@@ -1,6 +1,7 @@
 import Vuex from 'vuex'
 import axios from 'axios';
 import { Operation } from './ops';
+import Help from '@/views/Help.vue';
 
 const currentTimeFormatted = () => {
     let now = new Date();
@@ -10,7 +11,7 @@ const currentTimeFormatted = () => {
         year: 'numeric', 
         hour: '2-digit', 
         minute: '2-digit', 
-        hour12: false 
+        hour12: false
     };
     let dateString = now.toLocaleString('en-GB', options);
     return dateString;
@@ -21,7 +22,6 @@ const loadStateFromLocalStorage = () => {
     localStorage.removeItem('vuexState');
     const state = localStorage.getItem('vuexState');
     return state ? JSON.parse(state) : {
-        deployedAt: '',
         lastUpdate: '',
         totalTransactions: 0,
         allowedTransactions: 0,
@@ -34,12 +34,7 @@ const loadStateFromLocalStorage = () => {
             "sources": [],
             "numbers": []
         },
-        services: {
-            "wafHost": '',
-            "wafPort": '',
-            "redisHost": '',
-            "redisPort": ''
-        }
+        services: {}
     };
 };
 
@@ -56,11 +51,11 @@ const store = new Vuex.Store({
             state.lastUpdate = currentTimeFormatted();
         },
         updateAccessEvents(state, events) {
-            state.accessEvents = events
+            state.accessEvents = events.map(event => { return JSON.parse(event) });
             state.allowedTransactions = events.length
         },
         updateSecurityEvents(state, events) {
-            state.securityEvents = events
+            state.securityEvents = events.map(event => { return JSON.parse(event) });
             state.blockedTransactions = events.length
         },
         updateAttackDistribution(state, scores) {
@@ -69,13 +64,21 @@ const store = new Vuex.Store({
         updateHealth(state, health) {
             state.health = health
         },
+        updateServices(state, services) {
+            console.log(services)
+            console.log(typeof services)
+            state.services = services
+        },
+        updateDeployTime(state, time) {
+            state.deployedAt = time
+        },
         updateTopAttackSources(state) {
             state.attackSources = {}
             state.securityEvents.forEach(event => {
-                if (!state.attackSources[event.ip]) {
-                    state.attackSources[event.ip] = 0;
+                if (!state.attackSources[event.log.ip]) {
+                    state.attackSources[event.log.ip] = 0;
                 }
-                state.attackSources[event.ip]++;
+                state.attackSources[event.log.ip]++;
             });
             const sortedDistributions = Object.keys(state.attackSources)
             .map(ip => ({ ip: ip, times: state.attackSources[ip] }))
@@ -85,62 +88,32 @@ const store = new Vuex.Store({
         }
     },
     actions: {
-        async updateAccessEvents() {
-            await axios.get(`http://localhost:5001/api/authorized_events`)
-            .then((response) => {
-                if (response.data.status == Operation.CLUSTER_EVENT_FETCHING_FAILURE) {
-                    // pass
-                }
-                this.commit('updateAccessEvents', response.data.events);
-                this.commit('updateTotalTransactions');
-                this.commit('updateLatestUpdate');
-                this.commit('updateState');
-            });
+        updateAccessEvents({ commit }, { events }) {
+            commit('updateAccessEvents', events);
+            commit('updateTotalTransactions');
+            commit('updateLatestUpdate');
+            commit('updateState');
         },
-        async updateSecurityEvents() {
-            await axios.get(`http://localhost:5001/api/security_events`)
-            .then((response) => {
-                if (response.data.status == Operation.CLUSTER_EVENT_FETCHING_FAILURE) {
-                    // pass
-                }
-                this.commit('updateSecurityEvents', response.data.events)
-                this.commit('updateTotalTransactions');
-
-                this.dispatch('updateAttackDistribution');
-                this.commit('updateTopAttackSources');
-                this.commit('updateLatestUpdate');
-                this.commit('updateState');
-            });
+        updateSecurityEvents({ commit }, { events, distribution }) {
+            commit('updateSecurityEvents', events);
+            commit('updateTotalTransactions');
+            commit('updateLatestUpdate');
+            commit('updateTopAttackSources')
+            commit('updateState');
+            this.dispatch('updateAttackDistribution', { distribution });
         },
-        async updateAttackDistribution() {
-            await axios.get(`http://localhost:5001/api/attack_distribution`)
-            .then((response) => {
-                if (response.data.status == Operation.CLUSTER_EVENT_FETCHING_FAILURE) {
-                    // pass
-                }
-                this.commit('updateAttackDistribution', response.data.scores);
-                this.commit('updateState');
-            });
+        updateAttackDistribution({ commit }, { distribution }) {
+            commit('updateAttackDistribution', distribution);
+            commit('updateLatestUpdate');
+            commit('updateState');
         },
-        async updateHealth() {
-            await axios.get(`http://localhost:5001/api/health`)
-            .then((response) => {
-                if (response.data.status == Operation.CLUSTER_HEALTH_FAILURE) {
-                    // pass
-                }
-                this.commit('updateHealth', response.data.health);
-                this.commit('updateState');
-            });
+        updateHealth({ commit }, { health }) {
+            commit('updateHealth', health);
+            commit('updateState');
         },
-        async updateServices() {
-            await axios.get(`http://localhost:5001/api/health`)
-            .then((response) => {
-                if (response.data.status == Operation.CLUSTER_HEALTH_FAILURE) {
-                    // pass
-                }
-                this.commit('updateHealth', response.data.health);
-                this.commit('updateState');
-            });
+        updateServices({ commit }, { services }) {
+            commit('updateServices', services);
+            commit('updateState');
         }
     }
 });

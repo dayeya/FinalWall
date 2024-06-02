@@ -36,7 +36,7 @@ def get_geoip_data(ip: str) -> GeoData | None:
             response = reader.city(ip)
             return GeoData(
                 continent=response.continent.name,
-                country=response.country.iso_code,
+                country=response.country.name,
                 city=response.city.name,
             )
     except geoip2.errors.AddressNotFoundError:

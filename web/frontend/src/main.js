@@ -13,16 +13,32 @@ const socket = io('http://localhost:5001');
 
 // Create an event listener for each tunnel event forwarded by the backend.
 
-socket.on(Events.AccessLogUpdate, () => {
-    store.dispatch('updateAccessEvents');
+socket.on(Events.AccessLogUpdate, (data) => {
+    store.dispatch(
+        'updateAccessEvents', 
+        { events: data }
+    );
 });
 
-socket.on(Events.SecurityLogUpdate, () => {
-    store.dispatch('updateSecurityEvents');
+socket.on(Events.SecurityLogUpdate, (data) => {
+    store.dispatch(
+        'updateSecurityEvents',
+        { events: data.events, distribution: data.distribution }
+    );
 });
 
-socket.on(Events.WafHealthUpdate, () => {
-    store.dispatch('updateHealth');
+socket.on(Events.WafServicesUpdate, (data) => {
+    store.dispatch(
+        'updateServices', 
+        { services: data }
+    );
+});
+
+socket.on(Events.WafHealthUpdate, (data) => {
+    store.dispatch(
+        'updateHealth', 
+        { health: data }
+    );
 });
 
 const app = createApp(App);

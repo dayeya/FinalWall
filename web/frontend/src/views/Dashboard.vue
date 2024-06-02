@@ -6,7 +6,7 @@ export default {
   components: { AttackDistribution, AttackSources },
   computed: {
     ...mapState([
-      'deployedAt',
+      'services',
       'lastUpdate',
       'totalTransactions',
       'allowedTransactions',
@@ -49,7 +49,7 @@ export default {
       <div>
         <p>
           <span class="v-card-title">Deployed at</span><br>
-          {{ deployedAt }}
+          {{ this.services["deploy_time"] }}
         </p>
       </div>
     </div>

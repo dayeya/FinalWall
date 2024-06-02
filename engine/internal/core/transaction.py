@@ -41,16 +41,16 @@ class Transaction:
     headers - Dictionary of headers and their values.
     body - Body of the raw bytes of the transaction.
     """
-    owner: HostAddress
+    owner: Union[HostAddress, None]
     real_host_address: Union[HostAddress, None]
-    raw: bytes
+    raw: bytes | str
     creation_date: str
-    method: bytes = Method.GET
+    method: bytes | str = Method.GET
     url: ParseResultBytes = None
-    version: bytes = b""
+    version: bytes | str = b""
     query_params: dict = field(default_factory=dict)
     headers: dict = field(default_factory=dict)
-    body: bytes = b""
+    body: bytes | str = b""
     size: int = 0
 
     @property

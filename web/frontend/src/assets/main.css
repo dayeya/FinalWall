@@ -373,6 +373,14 @@
   margin-bottom: 0.5em;
 }
 
-.v-admin-cluster-services div div {
-  margin-block: 1em;
+.v-admin-redis-service-inner,
+.v-admin-waf-service-inner {
+  margin-bottom: 1em;
+  display: flex;
+  gap: 1em;
+}
+
+.v-admin-redis-service-inner > div > p,
+.v-admin-waf-service-inner > div > p {
+  margin-block: 0.5em;
 }

@@ -5,7 +5,7 @@ import SystemHealth from '../components/Health.vue';
 export default {
   components: { SystemHealth },
   computed: mapState([
-    'clusterName'
+    'services'
   ]),
   methods: {
     clusterReport() {
@@ -26,9 +26,19 @@ export default {
     <div class="v-admin-cluster-services">
       <div class="v-admin-waf-service">
         <h3>WAF</h3>
-        <div>
-          <p>Host: 109.106.43.2</p>
-          <p>Port: 5454</p>
+        <div class="v-admin-waf-service-inner">
+          <div>
+            <p>Host: {{ this.services["waf_host"] }}</p>
+            <p>Port: {{ this.services["waf_port"] }}</p>
+          </div>
+          <div>
+            <p>Proxy: {{ this.services["state"] }}</p>
+            <p>Environment: {{ this.services["environment"] }}</p>
+          </div>
+          <div>
+            <p>Organization Server Host: {{ this.services["organization_server_host"] }}</p>
+            <p>Organization Server Port: {{ this.services["organization_server_port"] }}</p>
+          </div>
         </div>
         <div class="service-health" id="waf">
           <SystemHealth />
@@ -36,17 +46,20 @@ export default {
       </div>
       <div class="v-admin-redis-service">
         <h3>Redis</h3>
-        <div>
-          <h4>Network</h4>
-          <p>Host: localhost</p>
-          <p>Port: 6379</p>
-        </div>
-        <div>
-          <h4>Database forensics</h4>
-          <p>Total transactions: 421</p>
-        </div>
-        <div class="service-health" id="redis">
-          Health: 
+        <div class="v-admin-redis-service-inner">
+          <div>
+            <p>Host: {{ this.services["redis_host"] }}</p>
+            <p>Port: {{ this.services["redis_port"] }}</p>
+          </div>
+          <div>
+            <p>Cache Size: {{ this.services["cache_size"] }}</p>
+            <p>Authorized Events: {{ this.services["access_events_size"] }}</p>
+            <p>Security Events: {{ this.services["security_events_size"] }}</p>
+          </div>
+          <div>
+            <p>Last authorized update: {{ this.services["last_access_update"] }}</p>
+            <p>Last security update: {{ this.services["last_security_update"] }}</p>
+          </div>
         </div>
       </div>
     </div>

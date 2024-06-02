@@ -8,7 +8,8 @@ import {
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 } from 'chart.js'
 import { Line } from 'vue-chartjs'
 
@@ -19,7 +20,8 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 )
 
 
@@ -45,9 +47,15 @@ export default {
             return {
                 responsive: true,
                 maintainAspectRatio: true,
+                tension: 0.15,
                 scales: {
                   x: { title: { display: true, text: 'Time [seconds]' } },
                   y: { title: { display: true, text: 'CPU Usage [%]' } }
+                },
+                elements: {
+                    point:{
+                        radius: 0
+                    }
                 }
             }
         }

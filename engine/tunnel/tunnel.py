@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any
+import pickle
 from enum import StrEnum
 import websockets.exceptions
 
@@ -13,14 +13,12 @@ class TunnelEvent(StrEnum):
     TunnelConnection = 'tunnel_connection'
     TunnelDisconnection = 'tunnel_disconnection'
 
-    ClusterUpdate = 'cluster_update'
-    ClusterLogUpdate = 'cluster_log_update'
-
     AccessLogUpdate = 'access_log_update'
     SecurityLogUpdate = 'security_log_update'
 
     AttackDistributionUpdate = 'attack_distribution_update'
     WafHealthUpdate = 'waf_health_update'
+    WafServicesUpdate = 'waf_services_update'
 
 
 class Tunnel:
@@ -31,6 +29,7 @@ class Tunnel:
     def __init__(self, endpoint: str):
         self.__connected = False
         self.__websocket = None
+        self.__event_queue = asyncio.LifoQueue()
         self.__tunnel_endpoint = endpoint
 
     @property
@@ -42,7 +41,11 @@ class Tunnel:
         return self.__connected
 
     async def connect(self, timeout=10):
-        """Connects to the endpoint."""
+        """
+        Connects to the endpoint.
+        Executes all events that were published in the connection process.
+        It does that by saving them in a queue and registers them one by one in order.
+        """
         async def _connect():
             while True:
                 try:
@@ -54,8 +57,10 @@ class Tunnel:
                     await asyncio.sleep(0.5)
         try:
             self.__websocket = await asyncio.wait_for(asyncio.create_task(_connect()), timeout=timeout)
-            self.register_event(TunnelEvent.TunnelConnection)
             self.__connected = True
+            await self.register_event(pickle.dumps((TunnelEvent.TunnelConnection, '')))
+            while not self.__event_queue.empty():
+                await self.register_event(await self.__event_queue.get())
             print(f"Tunnel is connected to {self.__tunnel_endpoint}")
         except asyncio.TimeoutError:
             print("Timeout for tunnel connection has ended.")
@@ -67,9 +72,16 @@ class Tunnel:
             raise StateError("Tunnel is open.")
         await self.connect()
 
-    def register_event(self, event: TunnelEvent):
+    async def register_event(self, event: bytes):
         """Sends a tunnel event to the endpoint."""
-        self.__websocket.send(event)
+        try:
+            if not self.connected:
+                await self.__event_queue.put(event)
+                return
+            self.__websocket.send(event)
+        except websockets.exceptions.ConnectionClosedError:
+            """Tunnel is closed."""
+            return
 
     def recv_result(self) -> EventResult:
         """Returns the data sent from the websocket server."""

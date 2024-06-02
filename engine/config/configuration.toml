@@ -10,8 +10,6 @@ port = 50000
 [Waf]
 ip = "0.0.0.0"
 port = 8080
-api_ip = "localhost"
-api_port = 8790
 
 
 [Admin]

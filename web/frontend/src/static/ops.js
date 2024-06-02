@@ -19,10 +19,12 @@ export const Events = Object.freeze({
     TunnelConnection: 'tunnel_connection',
     TunnelDisconnection: 'tunnel_disconnection',
 
-    ClusterUpdate: 'cluster_update',
+    AttackDistributionUpdate: 'attack_distribution_update',
     
     AccessLogUpdate: 'access_log_update',
     SecurityLogUpdate: 'security_log_update',
 
-    WafHealthUpdate: 'waf_health_update'
+    WafHealthUpdate: 'waf_health_update',
+    WafServicesUpdate: 'waf_services_update',
+    WafWorking: 'waf_working'
 });

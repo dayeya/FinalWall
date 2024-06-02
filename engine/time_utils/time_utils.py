@@ -3,7 +3,7 @@ import time
 from datetime import datetime
 
 
-UNIX_TIME_FORMAT = "%d/%m/%Y, %H:%M:%S"
+UNIX_TIME_FORMAT = "%d %B %Y, %H:%M"
 
 
 def get_unix_time(tz: str) -> str:
