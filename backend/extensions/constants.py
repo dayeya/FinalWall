@@ -1,0 +1,16 @@
+#
+# FinalWall constants.
+# Author: Dayeya.
+#
+
+# Codes for waf operations.
+
+TUNNEL_CONNECTION = 101
+TUNNEL_ABORT = -101
+
+WAF_DEPLOYMENT = 201
+WAF_EVENT_UPDATE = 501
+WAF_DISTRIBUTION_UPDATE = 801
+WAF_HEALTH = 1101
+AWF_SERVICES = 1401
+

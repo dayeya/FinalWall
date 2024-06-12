@@ -1,4 +1,5 @@
+docx
 .env/
 .vscode/
-.idea
-engine/internal/core/profiles_db
+.idea/
+finalwall/internal/core/profiles_db

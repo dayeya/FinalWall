@@ -124,6 +124,7 @@
 .v-admin-events,
 .v-admin-cluster,
 .v-admin-dashboard {
+  width: 100%;
   margin: 1em 1em 0 1em;
 }
 
@@ -201,14 +202,19 @@
   font-family: var(--primary-ff);
 }
 
+.v-admin-events-table-con {
+  max-height: 100%;
+}
+
 .v-admin-events-security, 
 .v-admin-events-authorized {
+  overflow-y: auto;
   margin: 1em 0 0 0em;
 }
 
 .v-admin-sec-events-table,
-.v-admin-clusters-table,
 .v-admin-au-events-table {
+  width: 100%;
   max-width: 100%;
   display: table;
   border: 2px #1b1f2326 solid;
@@ -218,8 +224,10 @@
 .v-admin-sec-events-table tr th,
 .v-admin-au-events-table tr th,
 .v-admin-clusters-table tr th {
+  width: auto;
   padding: 0.6em 0.6em 0.6em;
   text-align: left;
+  background-color: var();
   color: var(--secondary-fc);
   font-weight: 500;
   font-family: var(--primary-ff);
@@ -228,6 +236,7 @@
 .v-admin-sec-events-table tr td,
 .v-admin-au-events-table tr td,
 .v-admin-clusters-table tr td {
+  width: auto;
   color: var(--secondary-fc);
   font-family: var(--primary-ff);
   padding: 1em 2em 1em 0.5em;

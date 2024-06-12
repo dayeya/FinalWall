@@ -107,7 +107,8 @@ export default {
               <th scope="col">Geolocation</th>
             </tr>
           </thead>
-          <tr v-for="(event, index) in accessEvents" :key="index">
+          <tbody>
+            <tr v-for="(event, index) in accessEvents" :key="index">
             <td>{{ event.id }}</td>
             <td>{{ event.log.creation_date }}</td>
             <td>{{ event.log.ip }}</td>
@@ -116,6 +117,7 @@ export default {
             <td>{{ event.request.size }}</td>
             <td>{{ event.log.geolocation["continent"] }}, {{ event.log.geolocation["country"] }}, {{ event.log.geolocation["city"] }}</td>
           </tr>
+          </tbody>
         </table>
       </div>
       <div class="v-admin-events-security" v-if="displaySecurityEvents">
@@ -131,7 +133,8 @@ export default {
               <th scope="col">Geolocation</th>
             </tr>
           </thead>
-          <tr v-for="(event, index) in securityEvents" :key="index">
+          <tbody>
+            <tr v-for="(event, index) in securityEvents" :key="index">
             <td>{{ event.id }}</td>
             <td>{{ event.log.creation_date }}</td>
             <td>{{ event.log.ip }}</td>
@@ -140,6 +143,7 @@ export default {
             <td>{{ event.request.size }}</td>
             <td>{{ event.log.geolocation["continent"] }}, {{ event.log.geolocation["country"] }}, {{ event.log.geolocation["city"] }}</td>
           </tr>
+          </tbody>
         </table>
       </div>
     </div>
