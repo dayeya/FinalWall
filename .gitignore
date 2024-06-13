@@ -2,4 +2,4 @@ docx
 .env/
 .vscode/
 .idea/
-finalwall/internal/core/profiles_db
+engine/internal/core/profiles_db
